@@ -5,6 +5,11 @@
 	const reportTypeIds = [5]; // Ledelse Report type
 </script>
 
+<svelte:head>
+	<title>Ledelses Rapport</title>
+	<meta name="description" content="Ledelses rapport side">
+</svelte:head>
+
 <div>
 	<CreateReport reportType={5} reportTitle="Ledelses rapport" />
 

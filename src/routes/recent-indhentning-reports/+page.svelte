@@ -5,6 +5,11 @@
 	const reportTypeIds = [3]; // Indhentning Report type
 </script>
 
+<svelte:head>
+	<title>Indhentnings Rapport</title>
+	<meta name="description" content="Indhentnings rapport side">
+</svelte:head>
+
 <div>
 	<CreateReport reportType={3} reportTitle="Indhentnings rapport" />
 

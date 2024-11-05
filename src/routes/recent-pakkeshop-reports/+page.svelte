@@ -5,6 +5,11 @@
 	const reportTypeIds = [4]; // Pakkeshop Report type
 </script>
 
+<svelte:head>
+	<title>Pakkeshop Rapport</title>
+	<meta name="description" content="Pakkeshop rapport side">
+</svelte:head>
+
 <div>
 	<CreateReport reportType={4} reportTitle="Pakkeshop rapport" />
 

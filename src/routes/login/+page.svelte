@@ -11,7 +11,7 @@
 
 		try {
 			await loginUser({ email, password });
-			await invalidateAll();
+			await invalidateAll(); // re-run alle loads
 			goto('/');
 		} catch (err) {
 			message = err.message || 'Der opstod en fejl';
