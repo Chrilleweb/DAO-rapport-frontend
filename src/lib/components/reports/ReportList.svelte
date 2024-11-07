@@ -155,16 +155,18 @@
 							{report.content || 'Ingen indhold tilgængeligt'}
 						</p>
 
-						{#if report.user_id === Number(user.id)}
-							<div class="flex justify-end">
+						<div class="flex justify-end">
+							{#if report.user_id === Number(user.id)}
 								<button
 									class="text-gray-600 hover:text-gray-800 focus:outline-none"
 									on:click={() => openEditModal(report)}
 								>
 									<FontAwesomeIcon icon={faEdit} class="h-6 w-6" />
 								</button>
-							</div>
-						{/if}
+							{:else}
+								<div class="h-6 w-6"></div>
+							{/if}
+						</div>
 					</li>
 				{/each}
 			</ul>
