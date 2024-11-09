@@ -21,15 +21,15 @@
 
 <div class="flex items-center justify-center min-h-screen">
 	<div class="w-full max-w-md bg-white p-8 shadow-lg rounded-lg">
-		<h2 class="text-3xl font-bold text-center text-HeaderBg mb-6">Login</h2>
+		<h2 class="text-4xl font-bold text-center text-HeaderBg mb-6">Login</h2>
 
 		<div class="h-6">
 			{#if message}
-				<p class="text-red-500 text-center mb-4">{message}</p>
+				<p class="text-red-500 text-center">{message}</p>
 			{/if}
 		</div>
 
-		<form on:submit|preventDefault={handleLogin} class="space-y-4">
+		<form on:submit|preventDefault={handleLogin} class="space-y-4 mt-4">
 			<div>
 				<label for="email" class="block text-sm font-medium text-gray-700">Email</label>
 				<input

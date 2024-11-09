@@ -9,7 +9,6 @@
 	export let reportTypeIds = [];
 	const reports = writable([]);
 
-	let user;
 	$: user = $page.data.user;
 
 	let isEditing = false;
