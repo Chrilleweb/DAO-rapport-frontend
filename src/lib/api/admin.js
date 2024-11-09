@@ -85,3 +85,27 @@ export async function updateUserRole(userId, role) {
 		throw error;
 	}
 }
+
+export async function registerUser(firstname, lastname, email) {
+	try {
+		const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/auth/signup`, {
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json',
+			},
+			body: JSON.stringify({ firstname, lastname, email }),
+			credentials: 'include',
+		});
+
+		if (!response.ok) {
+			const errorData = await response.json();
+			throw new Error(errorData.message || 'Kunne ikke oprette bruger');
+		}
+
+		return await response.json();
+	} catch (error) {
+		console.error('Fejl ved oprettelse af bruger:', error);
+		throw error;
+	}
+}
+
