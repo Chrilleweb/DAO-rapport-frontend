@@ -5,8 +5,8 @@
 	import { writable } from 'svelte/store';
 	import socket from '$lib/socket';
 	import { page } from '$app/stores';
-	import jsPDF from 'jspdf';
 	import { processReportsWithAI } from '$lib/api/openai.js';
+	import { generateStandardPDF, generateAIPDF } from '$lib/utils/pdfGenerator.js';
 
 	export let reportTypeIds = [];
 	const reports = writable([]);
@@ -118,87 +118,22 @@
 		}
 	});
 
-	// Funktion til at generere PDF uden AI
 	function downloadPDF() {
     reports.subscribe((reportsData) => {
-      const doc = new jsPDF();
-
-      doc.setFontSize(16);
-      doc.text('Rapporter', 10, 10);
-
-      let yPosition = 20;
-
-      reportsData.forEach((report, index) => {
-        doc.setFontSize(12);
-        doc.text(`Rapport ${index + 1}`, 10, yPosition);
-        yPosition += 10;
-        doc.setFontSize(10);
-        doc.text(`Dato: ${report.created_at}`, 10, yPosition);
-        yPosition += 10;
-        doc.text(`Bruger: ${report.firstname} ${report.lastname}`, 10, yPosition);
-        yPosition += 10;
-        doc.text(`Type: ${report.report_type}`, 10, yPosition);
-        yPosition += 10;
-        doc.text(`Indhold:`, 10, yPosition);
-        yPosition += 10;
-
-        const splitContent = doc.splitTextToSize(report.content, 180);
-        doc.text(splitContent, 10, yPosition);
-        yPosition += splitContent.length * 10 + 10;
-
-        if (yPosition > 270) {
-          doc.addPage();
-          yPosition = 20;
-        }
-      });
-
-      doc.save('rapporter.pdf');
+      generateStandardPDF(reportsData);
     });
   }
 
   async function downloadPDFWithAI() {
-  try {
-    const reportsData = $reports; // Hent data fra Svelte-storen
-
-    // Fetch AI-behandlet data
-    const processedData = await processReportsWithAI(reportsData);
-
-    const doc = new jsPDF();
-    doc.setFontSize(18);
-    doc.text('Rapporter (Behandlet med AI)', 10, 15); // Større font og lidt mere topmargen
-
-    let yPosition = 30; // Startposition for teksten
-
-    // Split den AI-behandlede tekst for at passe til PDF-bredden
-    const splitContent = processedData.split('\n');
-
-    splitContent.forEach((line) => {
-      if (yPosition > 270) {
-        doc.addPage(); // Tilføj ny side, hvis pladsen er opbrugt
-        yPosition = 20;
-      }
-
-      // Tilføj hierarki ved at indrykke linjer baseret på deres indhold
-      if (line.startsWith('- ')) {
-        doc.setFontSize(12); // Normal fontstørrelse
-        doc.text(line, 15, yPosition); // Indryk linjen lidt
-      } else if (line.startsWith('  ')) {
-        doc.setFontSize(10); // Mindre fontstørrelse til detaljer
-        doc.text(line, 25, yPosition); // Indryk endnu mere for underlinjer
-      } else {
-        doc.setFontSize(14); // Brug større font til overskrifter
-        doc.text(line, 10, yPosition);
-      }
-
-      yPosition += 8; // Justér linjeafstand
-    });
-
-    doc.save('rapporter_ai.pdf');
-  } catch (error) {
-    console.error('Fejl ved generering af PDF med AI:', error);
-    alert('Der opstod en fejl ved generering af PDF med AI.');
+    try {
+      const reportsData = $reports;
+      const processedData = await processReportsWithAI(reportsData);
+      generateAIPDF(processedData);
+    } catch (error) {
+      console.error('Fejl ved generering af PDF med AI:', error);
+      alert('Der opstod en fejl ved generering af PDF med AI.');
+    }
   }
-}
 
 </script>
 
