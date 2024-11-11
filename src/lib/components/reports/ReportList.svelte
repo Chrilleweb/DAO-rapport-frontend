@@ -7,6 +7,7 @@
 	import { page } from '$app/stores';
 	import { processReportsWithAI } from '$lib/api/openai.js';
 	import { generateStandardPDF, generateAIPDF } from '$lib/utils/pdfGenerator.js';
+	import Loader from '../ui/Loader.svelte';
 
 	export let reportTypeIds = [];
 	const reports = writable([]);
@@ -16,6 +17,7 @@
 	let isEditing = false;
 	let editingReport = null;
 	let updatedContent = '';
+	let isLoading = false;
 
 	function openEditModal(report) {
 		isEditing = true;
@@ -119,41 +121,46 @@
 	});
 
 	function downloadPDF() {
-    reports.subscribe((reportsData) => {
-      generateStandardPDF(reportsData);
-    });
-  }
+		reports.subscribe((reportsData) => {
+			generateStandardPDF(reportsData);
+		});
+	}
 
-  async function downloadPDFWithAI() {
-    try {
-      const reportsData = $reports;
-      const processedData = await processReportsWithAI(reportsData);
-      generateAIPDF(processedData);
-    } catch (error) {
-      console.error('Fejl ved generering af PDF med AI:', error);
-      alert('Der opstod en fejl ved generering af PDF med AI.');
-    }
-  }
-
+	async function downloadPDFWithAI() {
+		try {
+			isLoading = true;
+			const reportsData = $reports;
+			const processedData = await processReportsWithAI(reportsData);
+			generateAIPDF(processedData);
+		} catch (error) {
+			console.error('Fejl ved generering af PDF med AI:', error);
+			alert('Der opstod en fejl ved generering af PDF med AI.');
+		} finally {
+			isLoading = false;
+		}
+	}
 </script>
 
 <div class="max-w-2xl mx-auto mt-6 mb-10">
+	{#if isLoading}
+		<Loader />
+	{/if}
 	<div class="flex justify-between items-center mb-4">
 		<h2 class="text-3xl font-semibold">Rapporter</h2>
 		<div class="flex space-x-4">
 			<button
-			  class="px-6 py-2 bg-[#D14343] text-white font-semibold rounded-lg hover:bg-[#B23030] focus:outline-none focus:ring-2 focus:ring-red-400"
-			  on:click={downloadPDF}
+				class="px-6 py-2 bg-[#D14343] text-white font-semibold rounded-lg hover:bg-[#B23030] focus:outline-none focus:ring-2 focus:ring-red-400"
+				on:click={downloadPDF}
 			>
-			  Download PDF
+				Download PDF
 			</button>
 			<button
-			  class="px-6 py-2 bg-[#D14343] text-white font-semibold rounded-lg hover:bg-[#B23030] focus:outline-none focus:ring-2 focus:ring-red-400"
-			  on:click={downloadPDFWithAI}
+				class="px-6 py-2 bg-[#D14343] text-white font-semibold rounded-lg hover:bg-[#B23030] focus:outline-none focus:ring-2 focus:ring-red-400"
+				on:click={downloadPDFWithAI}
 			>
-			  Download PDF AI
+				Download PDF AI
 			</button>
-		  </div>
+		</div>
 	</div>
 
 	<div class="report-list overflow-y-auto h-96">
