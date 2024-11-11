@@ -11,7 +11,7 @@ export function generateStandardPDF(reports, reportType) {
 	const pageHeight = 297; // Højden på A4-papir i mm (standard for jsPDF)
 
 	reports.forEach((report) => {
-		const boxPadding = 5;
+		const boxPadding = 8;
 		const estimatedBoxHeight = calculateBoxHeight(doc, report, boxPadding);
 
 		// Tjek, om der er plads til hele boksen på siden
@@ -25,9 +25,10 @@ export function generateStandardPDF(reports, reportType) {
 
 		// Indhold i boksen
 		yPosition += boxPadding;
-		doc.setFontSize(12);
+		doc.setFontSize(16);
 		doc.text(report.created_at, 12, yPosition); // Dato og tid
 		yPosition += 8;
+        doc.setFontSize(12);
 		doc.text(`${report.firstname} ${report.lastname}`, 12, yPosition); // Bruger
 		yPosition += 8;
 		doc.text(report.report_type, 12, yPosition); // Rapporttype
