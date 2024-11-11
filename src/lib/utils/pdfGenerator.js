@@ -1,10 +1,11 @@
 import jsPDF from 'jspdf';
 
-export function generateStandardPDF(reports) {
+export function generateStandardPDF(reports, reportType) {
 	const doc = new jsPDF();
 
+	const title = reportType === 'Samlet' ? 'Døgnrapport Samlet' : `Døgnrapport for ${reportType}`;
 	doc.setFontSize(18);
-	doc.text('Rapporter', 10, 10);
+	doc.text(title, 10, 10);
 
 	let yPosition = 20;
 	const pageHeight = 297; // Højden på A4-papir i mm (standard for jsPDF)
@@ -64,11 +65,15 @@ function calculateBoxHeight(doc, report, boxPadding) {
 	return fixedHeight + contentHeight + boxPadding * 2; // Total højde
 }
 
-export function generateAIPDF(processedData) {
+export function generateAIPDF(processedData, reportType) {
 	const doc = new jsPDF();
 
+	const title =
+		reportType === 'Samlet'
+			? 'Døgnrapport Samlet (Behandlet med AI)'
+			: `Døgnrapport for ${reportType} (Behandlet med AI)`;
 	doc.setFontSize(18);
-	doc.text('Rapporter (Behandlet med AI)', 10, 15);
+	doc.text(title, 10, 15);
 
 	let yPosition = 30;
 

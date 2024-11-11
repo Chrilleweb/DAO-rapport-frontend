@@ -122,7 +122,18 @@
 
 	function downloadPDF() {
 		reports.subscribe((reportsData) => {
-			generateStandardPDF(reportsData);
+			if (reportsData.length > 0) {
+				// Find unikke rapporttyper
+				const uniqueReportTypes = [...new Set(reportsData.map((report) => report.report_type))];
+
+				// Sæt titlen baseret på antal unikke rapporttyper
+				const reportType = uniqueReportTypes.length > 1 ? 'Samlet' : uniqueReportTypes[0];
+
+				// Generer PDF med korrekt titel
+				generateStandardPDF(reportsData, reportType);
+			} else {
+				alert('Ingen rapporter tilgængelige.');
+			}
 		});
 	}
 
@@ -130,8 +141,20 @@
 		try {
 			isLoading = true;
 			const reportsData = $reports;
-			const processedData = await processReportsWithAI(reportsData);
-			generateAIPDF(processedData);
+
+			if (reportsData.length > 0) {
+				// Find unikke rapporttyper
+				const uniqueReportTypes = [...new Set(reportsData.map((report) => report.report_type))];
+
+				// Sæt titlen baseret på antal unikke rapporttyper
+				const reportType = uniqueReportTypes.length > 1 ? 'Samlet' : uniqueReportTypes[0];
+
+				// Generer AI PDF med korrekt titel
+				const processedData = await processReportsWithAI(reportsData);
+				generateAIPDF(processedData, reportType);
+			} else {
+				alert('Ingen rapporter tilgængelige.');
+			}
 		} catch (error) {
 			console.error('Fejl ved generering af PDF med AI:', error);
 			alert('Der opstod en fejl ved generering af PDF med AI.');
