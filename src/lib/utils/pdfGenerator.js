@@ -28,7 +28,7 @@ export function generateStandardPDF(reports, reportType) {
 		doc.setFontSize(16);
 		doc.text(report.created_at, 12, yPosition); // Dato og tid
 		yPosition += 8;
-        doc.setFontSize(12);
+		doc.setFontSize(12);
 		doc.text(`${report.firstname} ${report.lastname}`, 12, yPosition); // Bruger
 		yPosition += 8;
 		doc.text(report.report_type, 12, yPosition); // Rapporttype
@@ -101,3 +101,51 @@ export function generateAIPDF(processedData, reportType) {
 
 	doc.save('rapporter_ai.pdf');
 }
+
+export function generateWeeklyAIPDF(processedData, reportType) {
+    const doc = new jsPDF();
+  
+    const title =
+      reportType === 'Samlet'
+        ? 'Ugentlig Rapport Samlet (Behandlet med AI)'
+        : `Ugentlig Rapport for ${reportType} (Behandlet med AI)`;
+    doc.setFontSize(18);
+    doc.text(title, 10, 15);
+  
+    let yPosition = 30;
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const margin = 15; // Margin for venstre og højre side
+    const maxLineWidth = pageWidth - margin * 2;
+  
+    const splitContent = processedData.split('\n');
+    splitContent.forEach((line) => {
+      if (yPosition > 270) {
+        doc.addPage();
+        yPosition = 20;
+      }
+  
+      let fontSize;
+      let indent;
+  
+      if (line.startsWith('- ')) {
+        fontSize = 12;
+        indent = 0;
+      } else if (line.startsWith('  - ')) {
+        fontSize = 10;
+        indent = 10;
+      } else {
+        fontSize = 14;
+        indent = 0;
+      }
+  
+      doc.setFontSize(fontSize);
+      const wrappedText = doc.splitTextToSize(line, maxLineWidth - indent);
+      doc.text(wrappedText, margin + indent, yPosition);
+  
+      // Beregn højden af teksten for at justere yPosition korrekt
+      const lineHeight = fontSize * 0.35 + 2; // Justér lineHeight efter behov
+      yPosition += wrappedText.length * lineHeight;
+    });
+  
+    doc.save('ugentlig_rapport_ai.pdf');
+  }  
