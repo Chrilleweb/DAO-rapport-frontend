@@ -61,17 +61,16 @@ export function generateStandardPDF(reports, reportType) {
         // Tilføj boks header-tekst
         doc.setFontSize(14);
         doc.setTextColor('#FFFFFF'); // Hvid tekst
-        doc.text(`Rapport ${index + 1}: ${report.created_at}`, 12, boxStart + 7);
+        doc.text(`${report.created_at}`, 12, boxStart + 7);
 
         // Tilføj boksindhold
         yPosition += 15;
         doc.setFontSize(12);
         doc.setTextColor(textColor);
-        doc.text(`Bruger: ${report.firstname} ${report.lastname}`, 12, yPosition);
+        doc.text(`${report.firstname} ${report.lastname}`, 12, yPosition);
         yPosition += 6;
-        doc.text(`Rapporttype: ${report.report_type}`, 12, yPosition);
+        doc.text(`${report.report_type}`, 12, yPosition);
         yPosition += 6;
-        doc.text('Indhold:', 12, yPosition);
         yPosition += 6;
 
         const splitContent = doc.splitTextToSize(report.content, pageWidth - 40);

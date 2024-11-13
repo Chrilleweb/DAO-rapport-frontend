@@ -21,23 +21,23 @@
 </script>
 
 <div class="max-w-lg mx-auto p-4">
-	<h2 class="text-5xl font-semibold text-center my-6">{reportTitle}</h2>
+	<h2 class="text-4xl font-semibold text-center my-6">{reportTitle}</h2>
 
 	<form on:submit|preventDefault={handleCreateReport}>
-		<div class="mb-4">
+		<div>
 			<label for="content" class="sr-only">Tilføj til rapporten</label>
 			<textarea
 				id="content"
 				bind:value={content}
 				placeholder="Tilføj til rapporten her..."
-				class="w-full h-32 p-4 bg-[#ECE0D1] rounded-lg placeholder-gray-600 text-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-400"
+				class="w-full h-28 p-4 bg-[#ECE0D1] rounded-lg placeholder-gray-600 text-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-400"
 				required
 			></textarea>
 		</div>
 		<div class="flex justify-end">
 			<button
 				type="submit"
-				class="px-6 py-2 bg-[#D14343] text-white font-semibold rounded-lg hover:bg-[#B23030] focus:outline-none focus:ring-2 focus:ring-red-400 mt-2"
+				class="px-6 py-2 bg-[#D14343] text-white font-semibold rounded-lg hover:bg-[#B23030] focus:outline-none focus:ring-2 focus:ring-red-400"
 			>
 				Opret Rapport
 			</button>
