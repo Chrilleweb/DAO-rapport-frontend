@@ -279,8 +279,8 @@
 					<li class="bg-[#ECE0D1] py-6 px-6 rounded-lg shadow-md mb-4 flex flex-col">
 						<div class="flex justify-between items-center mb-4">
 							<div class="text-gray-600 text-base flex gap-5">
-								<p>{report.created_at}</p>
 								<p>{report.firstname} {report.lastname}</p>
+								<p>{report.created_at}</p>
 							</div>
 							<div class="text-gray-600 text-base">
 								<p>{report.report_type}</p>
