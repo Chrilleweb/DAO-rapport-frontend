@@ -1,280 +1,372 @@
 <script>
+	import EditModal from '../ui/EditModal.svelte';
 	import { onMount, onDestroy } from 'svelte';
 	import { FontAwesomeIcon } from '@fortawesome/svelte-fontawesome';
 	import { faEdit } from '@fortawesome/free-solid-svg-icons';
 	import { writable } from 'svelte/store';
 	import socket from '$lib/socket';
 	import { page } from '$app/stores';
-	import { processReportsWithAI, processWeeklyReportsWithAI } from '$lib/api/openai.js';
-	import { generateStandardPDF, generateAIPDF, generateWeeklyAIPDF } from '$lib/utils/pdfGenerator.js';
+	import {
+	  processReportsWithAI,
+	  processWeeklyReportsWithAI,
+	} from '$lib/api/openai.js';
+	import {
+	  generateStandardPDF,
+	  generateAIPDF,
+	  generateWeeklyAIPDF,
+	} from '$lib/utils/pdfGenerator.js';
 	import Loader from '../ui/Loader.svelte';
-
+  
 	export let reportTypeIds = [];
 	const reports = writable([]);
-
+	const comments = writable({});
+	let showComments = {};
+	let newCommentContent = {};
+  
 	$: user = $page.data.user;
-
+  
 	let isEditing = false;
-	let editingReport = null;
-	let updatedContent = '';
+	let editingItem = null;
+	let editingType = ''; // 'report' eller 'comment'
 	let isLoading = false;
-
-	function openEditModal(report) {
-		isEditing = true;
-		editingReport = report;
-		updatedContent = report.content;
+  
+	function openEditModal(item, type) {
+	  isEditing = true;
+	  editingItem = item;
+	  editingType = type;
 	}
-
+  
 	function closeEditModal() {
-		isEditing = false;
-		editingReport = null;
-		updatedContent = '';
+	  isEditing = false;
+	  editingItem = null;
+	  editingType = '';
 	}
-
-	function handleEditSubmit() {
-		if (updatedContent.trim() === '') {
-			alert('Indholdet kan ikke være tomt.');
-			return;
-		}
-
+  
+	function handleEditSubmit(updatedContent) {
+	  if (updatedContent.trim() === '') {
+		alert('Indholdet kan ikke være tomt.');
+		return;
+	  }
+  
+	  if (editingType === 'report') {
 		socket.emit('edit report', {
-			reportId: editingReport.id,
-			userId: Number(user.id),
-			updatedContent: updatedContent.trim()
+		  reportId: editingItem.id,
+		  userId: Number(user.id),
+		  updatedContent: updatedContent.trim(),
 		});
-		closeEditModal();
+	  } else if (editingType === 'comment') {
+		socket.emit('edit comment', {
+		  commentId: editingItem.id,
+		  userId: Number(user.id),
+		  updatedContent: updatedContent.trim(),
+		  report_id: editingItem.report_id,
+		});
+	  }
+	  closeEditModal();
 	}
-
+  
+	function submitNewComment(reportId) {
+	  const content = newCommentContent[reportId]?.trim();
+	  if (!content) {
+		alert('Kommentaren kan ikke være tom.');
+		return;
+	  }
+  
+	  socket.emit('new comment', {
+		report_id: reportId,
+		user_id: Number(user.id),
+		content,
+	  });
+  
+	  newCommentContent[reportId] = '';
+	}
+  
 	onMount(() => {
-		function requestReports() {
-			socket.emit('get reports', reportTypeIds);
+	  function requestReports() {
+		socket.emit('get reports', reportTypeIds);
+	  }
+
+	  function requestAllComments() {
+		socket.emit('get all comments');
+	  }
+  
+	  if (socket.connected) {
+		requestReports();
+		requestAllComments();
+	  } else {
+		socket.on('connect', () => {
+		  requestReports();
+		  requestAllComments();
+		});
+	  }
+  
+	  socket.on('previous reports', (pReports) => {
+		const reportsWithNumberIds = pReports.map((report) => ({
+		  ...report,
+		  report_type_id: Number(report.report_type_id),
+		  user_id: Number(report.user_id),
+		}));
+		reports.set(reportsWithNumberIds);
+	  });
+
+	  socket.on('all comments', (groupedComments) => {
+    comments.set(groupedComments); // Initialiser kommentarer for alle rapporter
+  });
+  
+	  socket.on('new report', (newReport) => {
+		const reportTypeId = Number(newReport.report_type_id);
+		const userId = Number(newReport.user_id);
+		if (reportTypeIds.includes(reportTypeId)) {
+		  reports.update((currentReports) => [
+			{ ...newReport, report_type_id: reportTypeId, user_id: userId },
+			...currentReports,
+		  ]);
 		}
-
-		if (socket.connected) {
-			requestReports();
-		} else {
-			socket.on('connect', () => {
-				requestReports();
-			});
-		}
-
-		// Listen for previous reports
-		socket.on('previous reports', (pReports) => {
-			const reportsWithNumberIds = pReports.map((report) => ({
-				...report,
-				report_type_id: Number(report.report_type_id),
-				user_id: Number(report.user_id)
-			}));
-			reports.set(reportsWithNumberIds);
-		});
-
-		// Listen for new reports
-		socket.on('new report', (newReport) => {
-			const reportTypeId = Number(newReport.report_type_id);
-			const userId = Number(newReport.user_id);
-			if (reportTypeIds.includes(reportTypeId)) {
-				reports.update((currentReports) => [
-					{ ...newReport, report_type_id: reportTypeId, user_id: userId },
-					...currentReports
-				]);
-			}
-		});
-
-		// Listen for updated reports
-		socket.on('update report', (updatedReport) => {
-			const reportWithNumberId = {
-				...updatedReport,
-				user_id: Number(updatedReport.user_id),
-				report_type_id: Number(updatedReport.report_type_id)
-			};
-			reports.update((currentReports) => {
-				const index = currentReports.findIndex((report) => report.id === reportWithNumberId.id);
-				if (index !== -1) {
-					currentReports[index] = reportWithNumberId;
-				}
-				return [...currentReports];
-			});
-		});
-
-		// Handle edit errors
-		socket.on('edit error', (error) => {
-			console.error('Edit error:', error);
-		});
-
-		return () => {
-			socket.off('connect');
-			socket.off('new report');
-			socket.off('previous reports');
-			socket.off('update report');
-			socket.off('edit error');
+	  });
+  
+	  socket.on('update report', (updatedReport) => {
+		const reportWithNumberId = {
+		  ...updatedReport,
+		  user_id: Number(updatedReport.user_id),
+		  report_type_id: Number(updatedReport.report_type_id),
 		};
-	});
-
-	onDestroy(() => {
-		if (socket) {
-			socket.off('connect');
-			socket.off('new report');
-			socket.off('previous reports');
-			socket.off('update report');
-			socket.off('edit error');
-		}
-	});
-
-	function downloadPDF() {
-		reports.subscribe((reportsData) => {
-			if (reportsData.length > 0) {
-				// Find unikke rapporttyper
-				const uniqueReportTypes = [...new Set(reportsData.map((report) => report.report_type))];
-
-				// Sæt titlen baseret på antal unikke rapporttyper
-				const reportType = uniqueReportTypes.length > 1 ? 'Samlet' : uniqueReportTypes[0];
-
-				// Generer PDF med korrekt titel
-				generateStandardPDF(reportsData, reportType);
-			} else {
-				alert('Ingen rapporter tilgængelige.');
-			}
+		reports.update((currentReports) => {
+		  const index = currentReports.findIndex((report) => report.id === reportWithNumberId.id);
+		  if (index !== -1) {
+			currentReports[index] = reportWithNumberId;
+		  }
+		  return [...currentReports];
 		});
-	}
-
-	async function downloadPDFWithAI() {
-		try {
-			isLoading = true;
-			const reportsData = $reports;
-
-			if (reportsData.length > 0) {
-				// Find unikke rapporttyper
-				const uniqueReportTypes = [...new Set(reportsData.map((report) => report.report_type))];
-
-				// Sæt titlen baseret på antal unikke rapporttyper
-				const reportType = uniqueReportTypes.length > 1 ? 'Samlet' : uniqueReportTypes[0];
-
-				// Generer AI PDF med korrekt titel
-				const processedData = await processReportsWithAI(reportsData);
-				generateAIPDF(processedData, reportType);
-			} else {
-				alert('Ingen rapporter tilgængelige.');
-			}
-		} catch (error) {
-			console.error('Fejl ved generering af PDF med AI:', error);
-			alert('Der opstod en fejl ved generering af PDF med AI.');
-		} finally {
-			isLoading = false;
+	  });
+  
+	  socket.on('edit error', (error) => {
+		console.error('Edit error:', error);
+	  });
+  
+	  socket.on('comments', ({ reportId, comments: reportComments }) => {
+		comments.update((currentComments) => {
+		  return { ...currentComments, [reportId]: reportComments };
+		});
+	  });
+  
+	  socket.on('new comment', (newComment) => {
+		comments.update((currentComments) => {
+		  const reportId = newComment.report_id;
+		  const reportComments = currentComments[reportId] || [];
+		  return {
+			...currentComments,
+			[reportId]: [...reportComments, newComment],
+		  };
+		});
+	  });
+  
+	  socket.on('update comment', (updatedComment) => {
+		comments.update((currentComments) => {
+		  const reportId = updatedComment.report_id;
+		  const reportComments = currentComments[reportId] || [];
+		  const index = reportComments.findIndex((c) => c.id === updatedComment.id);
+		  if (index !== -1) {
+			reportComments[index] = updatedComment;
+			return {
+			  ...currentComments,
+			  [reportId]: reportComments,
+			};
+		  }
+		  return currentComments;
+		});
+	  });
+  
+	  socket.on('edit comment error', (error) => {
+		console.error('Edit comment error:', error);
+	  });
+  
+	  return () => {
+		socket.off('connect');
+		socket.off('new report');
+		socket.off('previous reports');
+		socket.off('update report');
+		socket.off('edit error');
+		socket.off('all comments');
+		socket.off('comments');
+		socket.off('new comment');
+		socket.off('update comment');
+		socket.off('edit comment error');
+	  };
+	});
+  
+	onDestroy(() => {
+	  if (socket) {
+		socket.off('connect');
+		socket.off('new report');
+		socket.off('previous reports');
+		socket.off('update report');
+		socket.off('edit error');
+		socket.off('comments');
+		socket.off('new comment');
+		socket.off('update comment');
+		socket.off('edit comment error');
+	  }
+	});
+  
+	function downloadPDF() {
+	  reports.subscribe((reportsData) => {
+		if (reportsData.length > 0) {
+		  const uniqueReportTypes = [...new Set(reportsData.map((report) => report.report_type))];
+		  const reportType = uniqueReportTypes.length > 1 ? 'Samlet' : uniqueReportTypes[0];
+		  generateStandardPDF(reportsData, reportType);
+		} else {
+		  alert('Ingen rapporter tilgængelige.');
 		}
+	  });
 	}
-
+  
+	async function downloadPDFWithAI() {
+	  try {
+		isLoading = true;
+		const reportsData = $reports;
+  
+		if (reportsData.length > 0) {
+		  const uniqueReportTypes = [...new Set(reportsData.map((report) => report.report_type))];
+		  const reportType = uniqueReportTypes.length > 1 ? 'Samlet' : uniqueReportTypes[0];
+		  const processedData = await processReportsWithAI(reportsData);
+		  generateAIPDF(processedData, reportType);
+		} else {
+		  alert('Ingen rapporter tilgængelige.');
+		}
+	  } catch (error) {
+		console.error('Fejl ved generering af PDF med AI:', error);
+		alert('Der opstod en fejl ved generering af PDF med AI.');
+	  } finally {
+		isLoading = false;
+	  }
+	}
+  
 	async function downloadWeeklyReportWithAI() {
-    try {
-        isLoading = true;
-
-        const processedData = await processWeeklyReportsWithAI(reportTypeIds);
-
-        // Generer PDF med det behandlede data
-        const uniqueReportTypes = [...new Set($reports.map((report) => report.report_type))];
-        const reportType = uniqueReportTypes.length > 1 ? 'Samlet' : uniqueReportTypes[0];
-        generateWeeklyAIPDF(processedData, reportType);
-    } catch (error) {
-        console.error('Fejl ved generering af den ugentlige rapport med AI:', error);
-        alert('Der opstod en fejl ved generering af den ugentlige rapport med AI.');
-    } finally {
-        isLoading = false;
-    }
-}
-
-</script>
-
-<div class="max-w-2xl mx-auto mt-6 mb-10">
+	  try {
+		isLoading = true;
+		const processedData = await processWeeklyReportsWithAI(reportTypeIds);
+		const uniqueReportTypes = [...new Set($reports.map((report) => report.report_type))];
+		const reportType = uniqueReportTypes.length > 1 ? 'Samlet' : uniqueReportTypes[0];
+		generateWeeklyAIPDF(processedData, reportType);
+	  } catch (error) {
+		console.error('Fejl ved generering af den ugentlige rapport med AI:', error);
+		alert('Der opstod en fejl ved generering af den ugentlige rapport med AI.');
+	  } finally {
+		isLoading = false;
+	  }
+	}
+  </script>
+  
+  <div class="max-w-2xl mx-auto mt-6 mb-10">
 	{#if isLoading}
-		<Loader />
+	  <Loader />
 	{/if}
 	<div class="flex justify-between items-center mb-4">
+	  <button
+		class="px-6 py-2 bg-[#D14343] text-white font-semibold rounded-lg hover:bg-[#B23030] focus:outline-none focus:ring-2 focus:ring-red-400"
+		on:click={downloadWeeklyReportWithAI}
+	  >
+		Ugentlig AI Rapport
+	  </button>
+	  <div class="flex space-x-4">
 		<button
-			class="px-6 py-2 bg-[#D14343] text-white font-semibold rounded-lg hover:bg-[#B23030] focus:outline-none focus:ring-2 focus:ring-red-400"
-			on:click={downloadWeeklyReportWithAI}
+		  class="px-6 py-2 bg-[#D14343] text-white font-semibold rounded-lg hover:bg-[#B23030] focus:outline-none focus:ring-2 focus:ring-red-400"
+		  on:click={downloadPDF}
 		>
-			Ugentlig AI Rapport
+		  Download PDF
 		</button>
-		<div class="flex space-x-4">
-			<button
-				class="px-6 py-2 bg-[#D14343] text-white font-semibold rounded-lg hover:bg-[#B23030] focus:outline-none focus:ring-2 focus:ring-red-400"
-				on:click={downloadPDF}
-			>
-				Download PDF
-			</button>
-			<button
-				class="px-6 py-2 bg-[#D14343] text-white font-semibold rounded-lg hover:bg-[#B23030] focus:outline-none focus:ring-2 focus:ring-red-400"
-				on:click={downloadPDFWithAI}
-			>
-				Download PDF AI
-			</button>
-		</div>
+		<button
+		  class="px-6 py-2 bg-[#D14343] text-white font-semibold rounded-lg hover:bg-[#B23030] focus:outline-none focus:ring-2 focus:ring-red-400"
+		  on:click={downloadPDFWithAI}
+		>
+		  Download PDF AI
+		</button>
+	  </div>
 	</div>
-
+  
 	<div class="report-list overflow-y-auto h-96">
-		{#if $reports.length > 0}
-			<ul>
-				{#each $reports as report}
-					<li class="bg-[#ECE0D1] py-6 px-6 rounded-lg shadow-md mb-4 flex flex-col">
-						<div class="flex justify-between items-center mb-4">
-							<div class="text-gray-600 text-base flex gap-5">
-								<p>{report.created_at}</p>
-								<p>{report.firstname} {report.lastname}</p>
-							</div>
-
-							<div class="text-gray-600 text-base">
-								<p>{report.report_type}</p>
-							</div>
-						</div>
-
-						<p class="text-gray-800 whitespace-pre-wrap text-lg flex-grow">
-							{report.content || 'Ingen indhold tilgængeligt'}
-						</p>
-
-						<div class="flex justify-end">
-							{#if report.user_id === Number(user.id)}
-								<button
-									class="text-gray-600 hover:text-gray-800 focus:outline-none"
-									on:click={() => openEditModal(report)}
-								>
-									<FontAwesomeIcon icon={faEdit} class="h-6 w-6" />
-								</button>
-							{:else}
-								<div class="h-6 w-6"></div>
-							{/if}
-						</div>
-					</li>
-				{/each}
-			</ul>
-		{:else}
-			<p class="text-center text-lg">Ingen rapporter tilgængelige</p>
-		{/if}
-	</div>
-
-	<!-- Redigeringsmodal -->
-	{#if isEditing}
-		<div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-			<div class="bg-white p-8 rounded-lg w-11/12 max-w-lg shadow-xl">
-				<h2 class="text-2xl font-semibold mb-4 text-HeaderBg text-center">Rediger Rapport</h2>
-				<textarea
-					class="w-full h-40 p-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-HeaderBg"
-					bind:value={updatedContent}
-					placeholder="Rediger rapportens indhold her..."
-				></textarea>
-				<div class="flex justify-end mt-4 space-x-2">
-					<button
-						class="px-4 py-2 bg-gray-300 rounded-lg hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400"
-						on:click={closeEditModal}
-					>
-						Annuller
-					</button>
-					<button
-						class="px-4 py-2 bg-HeaderBg text-white rounded-lg hover:bg-toggleBg focus:outline-none focus:ring-2 focus:ring-[#004B8D]"
-						on:click={handleEditSubmit}
-					>
-						Gem
-					</button>
-				</div>
+	  {#if $reports.length > 0}
+	  <ul>
+		{#each $reports as report}
+		  <li class="bg-[#ECE0D1] py-6 px-6 rounded-lg shadow-md mb-4 flex flex-col">
+			<div class="flex justify-between items-center mb-4">
+			  <div class="text-gray-600 text-base flex gap-5">
+				<p>{report.created_at}</p>
+				<p>{report.firstname} {report.lastname}</p>
+			  </div>
+			  <div class="text-gray-600 text-base">
+				<p>{report.report_type}</p>
+			  </div>
 			</div>
-		</div>
-	{/if}
-</div>
+	  
+			<p class="text-gray-800 whitespace-pre-wrap text-lg flex-grow">
+			  {report.content || 'Ingen indhold tilgængeligt'}
+			</p>
+	  
+			<div class="flex justify-end items-center mt-4 gap-4">
+			  {#if report.user_id === Number(user.id)}
+				<button
+				  class="text-gray-600 hover:text-gray-800 focus:outline-none flex items-center"
+				  on:click={() => openEditModal(report, 'report')}
+				>
+				  <FontAwesomeIcon icon={faEdit} class="h-6 w-6 mr-2" />
+				  Rediger
+				</button>
+			  {/if}
+			</div>
+	  
+			<!-- Kommentarer -->
+			<div class="mt-4">
+			  {#each $comments[report.id] || [] as comment}
+				<div class="comment bg-[#fff7ee] p-4 rounded-lg mt-2">
+				  <div class="flex justify-between">
+					<p class="font-semibold">{comment.firstname} {comment.lastname}</p>
+					<p class="text-sm text-gray-600">{comment.created_at}</p>
+				  </div>
+				  <p class="mt-2">{comment.content}</p>
+				  {#if comment.user_id === Number(user.id)}
+					<button
+					  class="text-blue-500 hover:underline text-sm mt-2"
+					  on:click={() => openEditModal(comment, 'comment')}
+					>
+					<FontAwesomeIcon icon={faEdit} class="h-4 w-4 mr-1" />
+					  <span>Rediger</span>
+					</button>
+				  {/if}
+				</div>
+			  {/each}
+	  
+			  <!-- Tilføj ny kommentar -->
+			  <div class="mt-4">
+				<textarea
+				  class="w-full p-2 border border-gray-300 rounded-lg"
+				  bind:value={newCommentContent[report.id]}
+				  placeholder="Skriv en kommentar..."
+				></textarea>
+				<button
+				  class="mt-2 px-4 py-2 bg-HeaderBg text-white rounded-lg hover:bg-toggleBg"
+				  on:click={() => submitNewComment(report.id)}
+				>
+				  Tilføj kommentar
+				</button>
+			  </div>
+			</div>
+		  </li>
+		{/each}
+	  </ul>	   
+	  {:else}
+		<p class="text-center text-lg">Ingen rapporter tilgængelige</p>
+	  {/if}
+	</div>
+  
+	<!-- Brug af EditModal til både rapporter og kommentarer -->
+	<EditModal
+	  show={isEditing}
+	  title={editingType === 'report' ? 'Rediger Rapport' : 'Rediger Kommentar'}
+	  content={editingItem?.content || ''}
+	  placeholder={editingType === 'report' ? 'Rediger rapportens indhold her...' : 'Rediger kommentarens indhold her...'}
+	  onSave={handleEditSubmit}
+	  onCancel={closeEditModal}
+	/>
+  </div>
+  

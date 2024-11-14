@@ -1,7 +1,7 @@
 <script>
 	import { fetchAllUsers, resetPassword, deleteUser, updateUserRole } from '$lib/api/admin';
 	import { onMount } from 'svelte';
-	import Modal from '../../lib/components/ui/modal.svelte';
+	import ConfirmationModal from '../../lib/components/ui/ConfirmationModal.svelte';
 	import { page } from '$app/stores';
 	import ErrorAdmin from '../../lib/components/errorPages/ErrorAdmin.svelte';
 
@@ -149,7 +149,7 @@
 			</table>
 		</div>
 
-		<Modal
+		<ConfirmationModal
 			bind:show={showModal}
 			title="Bekræft handling"
 			message={modalMessage}
