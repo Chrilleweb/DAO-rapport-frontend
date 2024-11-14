@@ -213,16 +213,14 @@
 	async function downloadPDFWithAI() {
 		try {
 			isLoading = true;
-			const reportsData = $reports;
 
-			if (reportsData.length > 0) {
-				const uniqueReportTypes = [...new Set(reportsData.map((report) => report.report_type))];
-				const reportType = uniqueReportTypes.length > 1 ? 'Samlet' : uniqueReportTypes[0];
-				const processedData = await processReportsWithAI(reportsData);
-				generateAIPDF(processedData, reportType);
-			} else {
-				alert('Ingen rapporter tilgængelige.');
-			}
+			// Send kun reportTypeIds til backend
+			const processedData = await processReportsWithAI(reportTypeIds);
+
+			// Generer AI PDF med det behandlede data
+			const uniqueReportTypes = [...new Set($reports.map((report) => report.report_type))];
+			const reportType = uniqueReportTypes.length > 1 ? 'Samlet' : uniqueReportTypes[0];
+			generateAIPDF(processedData, reportType);
 		} catch (error) {
 			console.error('Fejl ved generering af PDF med AI:', error);
 			alert('Der opstod en fejl ved generering af PDF med AI.');

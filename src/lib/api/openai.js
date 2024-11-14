@@ -1,11 +1,11 @@
-export async function processReportsWithAI(reportsData) {
+export async function processReportsWithAI(reportTypeIds) {
 	try {
 		const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/openai/process-reports`, {
 			method: 'POST',
 			headers: {
 				'Content-Type': 'application/json'
 			},
-			body: JSON.stringify({ reports: reportsData }),
+			body: JSON.stringify({ reportTypeIds }),
 			credentials: 'include' 
 		});
 
