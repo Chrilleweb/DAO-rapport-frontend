@@ -258,90 +258,93 @@
 	}
 
 	async function downloadPDFWithAI() {
-	try {
-		isLoading = true;
+		try {
+			isLoading = true;
 
-		const startDateObj = new Date(startDate);
-		const endDateObj = new Date(endDate);
+			const startDateObj = new Date(startDate);
+			const endDateObj = new Date(endDate);
 
-		const startDateUTC = new Date(
-			startDateObj.getTime() - startDateObj.getTimezoneOffset() * 60000
-		);
-		const endDateUTC = new Date(endDateObj.getTime() - endDateObj.getTimezoneOffset() * 60000);
+			const startDateUTC = new Date(
+				startDateObj.getTime() - startDateObj.getTimezoneOffset() * 60000
+			);
+			const endDateUTC = new Date(endDateObj.getTime() - endDateObj.getTimezoneOffset() * 60000);
 
-		const formattedStartDate = startDateUTC.toISOString().replace('T', ' ').slice(0, 19);
-		const formattedEndDate = endDateUTC.toISOString().replace('T', ' ').slice(0, 19);
+			const formattedStartDate = startDateUTC.toISOString().replace('T', ' ').slice(0, 19);
+			const formattedEndDate = endDateUTC.toISOString().replace('T', ' ').slice(0, 19);
 
-		const processedData = await processReportsWithAIDate(
-			reportTypeIds,
-			formattedStartDate,
-			formattedEndDate
-		);
+			const processedData = await processReportsWithAIDate(
+				reportTypeIds,
+				formattedStartDate,
+				formattedEndDate
+			);
 
-		const uniqueReportTypes = [...new Set($reports.map((report) => report.report_type))];
-		const reportType = uniqueReportTypes.length > 1 ? 'Samlet' : uniqueReportTypes[0];
-		generateAIPDF(processedData, reportType);
-	} catch (error) {
-		console.error('Fejl ved generering af PDF med AI:', error);
-		alert('Der opstod en fejl ved generering af PDF med AI.');
-	} finally {
-		isLoading = false;
+			const uniqueReportTypes = [...new Set($reports.map((report) => report.report_type))];
+			const reportType = uniqueReportTypes.length > 1 ? 'Samlet' : uniqueReportTypes[0];
+			generateAIPDF(processedData, reportType);
+		} catch (error) {
+			console.error('Fejl ved generering af PDF med AI:', error);
+			alert('Der opstod en fejl ved generering af PDF med AI.');
+		} finally {
+			isLoading = false;
+		}
 	}
-}
 
-// Kald requestReports, når reportTypeIds ændres
-$: if (reportTypeIds) {
-  requestReports();
-}
+	// Kald requestReports, når reportTypeIds ændres
+	$: if (reportTypeIds) {
+		requestReports();
+	}
 
-// Kald requestReports, når startDate eller endDate ændres
-$: if (startDate && endDate) {
-  requestReports();
-}
-
-
+	// Kald requestReports, når startDate eller endDate ændres
+	$: if (startDate && endDate) {
+		requestReports();
+	}
 </script>
 
 <div class="max-w-3xl mx-auto mt-6 mb-10">
 	{#if isLoading}
 		<Loader />
 	{/if}
+	<h2 class="text-4xl font-semibold text-center my-6">Tidligere rapporter</h2>
 
 	<!-- Rapporttype Vælger -->
-<div class="mb-4">
-    <label for="report-type" class="block text-gray-700 font-semibold mb-2">Vælg rapporttype:</label>
-    <select
-      id="report-type"
-      bind:value={selectedReportTypeIndex}
-      class="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-    >
-      {#each reportTypeOptions as option, index}
-        <option value={index}>{option.label}</option>
-      {/each}
-    </select>
-  </div>
+	<div class="mb-4">
+		<label for="report-type" class="block text-gray-700 font-semibold mb-2">Vælg rapporttype:</label
+		>
+		<select
+			id="report-type"
+			bind:value={selectedReportTypeIndex}
+			class="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+		>
+			{#each reportTypeOptions as option, index}
+				<option value={index}>{option.label}</option>
+			{/each}
+		</select>
+	</div>
 	<div class="flex justify-between items-center mb-4">
 		<!-- Dato- og tidsvælgere -->
 		<div class="mb-4 grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label for="start-date" class="block text-gray-700 font-semibold mb-2">Startdato og tid:</label>
-              <input
-                type="datetime-local"
-                id="start-date"
-                bind:value={startDate}
-                class="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-            <div>
-              <label for="end-date" class="block text-gray-700 font-semibold mb-2">Slutdato og tid:</label>
-              <input
-                type="datetime-local"
-                id="end-date"
-                bind:value={endDate}
-                class="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-          </div>
+			<div>
+				<label for="start-date" class="block text-gray-700 font-semibold mb-2"
+					>Startdato og tid:</label
+				>
+				<input
+					type="datetime-local"
+					id="start-date"
+					bind:value={startDate}
+					class="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+				/>
+			</div>
+			<div>
+				<label for="end-date" class="block text-gray-700 font-semibold mb-2">Slutdato og tid:</label
+				>
+				<input
+					type="datetime-local"
+					id="end-date"
+					bind:value={endDate}
+					class="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+				/>
+			</div>
+		</div>
 
 		<div class="flex space-x-4 ml-4">
 			<button
@@ -359,7 +362,7 @@ $: if (startDate && endDate) {
 		</div>
 	</div>
 
-	<div class="report-list overflow-y-auto h-[33rem]">
+	<div class="report-list overflow-y-auto h-[30rem]">
 		{#if $reports.length > 0}
 			<ul>
 				{#each $reports as report}
