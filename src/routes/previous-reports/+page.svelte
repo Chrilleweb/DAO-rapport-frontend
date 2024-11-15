@@ -1,20 +1,15 @@
 <script>
-	import EditModal from '../ui/EditModal.svelte';
+	import EditModal from '$lib/components/ui/EditModal.svelte';
 	import { onMount, onDestroy } from 'svelte';
 	import { FontAwesomeIcon } from '@fortawesome/svelte-fontawesome';
 	import { faEdit } from '@fortawesome/free-solid-svg-icons';
 	import { writable } from 'svelte/store';
 	import socket from '$lib/socket';
 	import { page } from '$app/stores';
-	import { processReportsWithAI, processWeeklyReportsWithAI } from '$lib/api/openai.js';
-	import {
-		generateStandardPDF,
-		generateAIPDF,
-		generateWeeklyAIPDF
-	} from '$lib/utils/pdfGenerator.js';
-	import Loader from '../ui/Loader.svelte';
+	import { processReportsWithAIDate } from '$lib/api/openai.js';
+	import { generateStandardPDF, generateAIPDF } from '$lib/utils/pdfGenerator.js';
+	import Loader from '$lib/components/ui/Loader.svelte';
 
-	export let reportTypeIds = [];
 	const reports = writable([]);
 	const comments = writable({});
 	let newCommentContent = {};
@@ -25,6 +20,41 @@
 	let editingItem = null;
 	let editingType = ''; // 'report' eller 'comment'
 	let isLoading = false;
+
+	let reportTypeOptions = [
+		{ label: 'Alle', ids: [1, 2, 3, 4, 5] },
+		{ label: 'UBD', ids: [2] },
+		{ label: 'Pakkeshop', ids: [4] },
+		{ label: 'Indhentning', ids: [3] },
+		{ label: 'Ledelse', ids: [5] }
+	];
+
+	let selectedReportTypeIndex = 0; // Default to 'Alle'
+	$: reportTypeIds = reportTypeOptions[selectedReportTypeIndex].ids;
+
+	let startDate;
+	let endDate;
+
+	// Hent datoer fra localStorage, hvis vi er på klienten
+	if (typeof window !== 'undefined') {
+		let storedStartDate = localStorage.getItem('startDate');
+		let storedEndDate = localStorage.getItem('endDate');
+
+		startDate = storedStartDate
+			? storedStartDate
+			: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString().slice(0, 16);
+		endDate = storedEndDate ? storedEndDate : new Date().toISOString().slice(0, 16);
+	} else {
+		// Standardværdier for SSR
+		startDate = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString().slice(0, 16);
+		endDate = new Date().toISOString().slice(0, 16);
+	}
+
+	// Opdater localStorage, hvis datoerne ændres (kun på klienten)
+	$: if (typeof window !== 'undefined') {
+		localStorage.setItem('startDate', startDate);
+		localStorage.setItem('endDate', endDate);
+	}
 
 	function openEditModal(item, type) {
 		isEditing = true;
@@ -77,15 +107,35 @@
 		newCommentContent[reportId] = '';
 	}
 
+	function requestReports() {
+		if (startDate && endDate) {
+			const startDateObj = new Date(startDate);
+			const endDateObj = new Date(endDate);
+
+			// Convert to UTC by adding the timezone offset
+			const startDateUTC = new Date(
+				startDateObj.getTime() - startDateObj.getTimezoneOffset() * 60000
+			);
+			const endDateUTC = new Date(endDateObj.getTime() - endDateObj.getTimezoneOffset() * 60000);
+
+			const formattedStartDate = startDateUTC.toISOString().replace('T', ' ').slice(0, 19);
+			const formattedEndDate = endDateUTC.toISOString().replace('T', ' ').slice(0, 19);
+
+			socket.emit('get reports dates', {
+				reportTypeIds,
+				startDate: formattedStartDate,
+				endDate: formattedEndDate
+			});
+		} else {
+			alert('Vælg venligst både start- og slutdato/tid.');
+		}
+	}
+
+	function requestAllComments() {
+		socket.emit('get all comments');
+	}
+
 	onMount(() => {
-		function requestReports() {
-			socket.emit('get reports', reportTypeIds);
-		}
-
-		function requestAllComments() {
-			socket.emit('get all comments');
-		}
-
 		if (socket.connected) {
 			requestReports();
 			requestAllComments();
@@ -136,7 +186,7 @@
 		});
 
 		socket.on('all comments', (groupedComments) => {
-			comments.set(groupedComments); // Initialiser kommentarer for alle rapporter
+			comments.set(groupedComments);
 		});
 
 		socket.on('new comment', (newComment) => {
@@ -177,7 +227,6 @@
 			socket.off('update report');
 			socket.off('edit error');
 			socket.off('all comments');
-			socket.off('comments');
 			socket.off('new comment');
 			socket.off('update comment');
 			socket.off('edit comment error');
@@ -191,7 +240,6 @@
 			socket.off('previous reports');
 			socket.off('update report');
 			socket.off('edit error');
-			socket.off('comments');
 			socket.off('new comment');
 			socket.off('update comment');
 			socket.off('edit comment error');
@@ -210,60 +258,100 @@
 	}
 
 	async function downloadPDFWithAI() {
-		try {
-			isLoading = true;
+	try {
+		isLoading = true;
 
-			// Send kun reportTypeIds til backend
-			const processedData = await processReportsWithAI(reportTypeIds);
+		const startDateObj = new Date(startDate);
+		const endDateObj = new Date(endDate);
 
-			// Generer AI PDF med det behandlede data
-			const uniqueReportTypes = [...new Set($reports.map((report) => report.report_type))];
-			const reportType = uniqueReportTypes.length > 1 ? 'Samlet' : uniqueReportTypes[0];
-			generateAIPDF(processedData, reportType);
-		} catch (error) {
-			console.error('Fejl ved generering af PDF med AI:', error);
-			alert('Der opstod en fejl ved generering af PDF med AI.');
-		} finally {
-			isLoading = false;
-		}
+		const startDateUTC = new Date(
+			startDateObj.getTime() - startDateObj.getTimezoneOffset() * 60000
+		);
+		const endDateUTC = new Date(endDateObj.getTime() - endDateObj.getTimezoneOffset() * 60000);
+
+		const formattedStartDate = startDateUTC.toISOString().replace('T', ' ').slice(0, 19);
+		const formattedEndDate = endDateUTC.toISOString().replace('T', ' ').slice(0, 19);
+
+		const processedData = await processReportsWithAIDate(
+			reportTypeIds,
+			formattedStartDate,
+			formattedEndDate
+		);
+
+		const uniqueReportTypes = [...new Set($reports.map((report) => report.report_type))];
+		const reportType = uniqueReportTypes.length > 1 ? 'Samlet' : uniqueReportTypes[0];
+		generateAIPDF(processedData, reportType);
+	} catch (error) {
+		console.error('Fejl ved generering af PDF med AI:', error);
+		alert('Der opstod en fejl ved generering af PDF med AI.');
+	} finally {
+		isLoading = false;
 	}
+}
 
-	async function downloadWeeklyReportWithAI() {
-		try {
-			isLoading = true;
-			const processedData = await processWeeklyReportsWithAI(reportTypeIds);
-			const uniqueReportTypes = [...new Set($reports.map((report) => report.report_type))];
-			const reportType = uniqueReportTypes.length > 1 ? 'Samlet' : uniqueReportTypes[0];
-			generateWeeklyAIPDF(processedData, reportType);
-		} catch (error) {
-			console.error('Fejl ved generering af den ugentlige rapport med AI:', error);
-			alert('Der opstod en fejl ved generering af den ugentlige rapport med AI.');
-		} finally {
-			isLoading = false;
-		}
-	}
+// Kald requestReports, når reportTypeIds ændres
+$: if (reportTypeIds) {
+  requestReports();
+}
+
+// Kald requestReports, når startDate eller endDate ændres
+$: if (startDate && endDate) {
+  requestReports();
+}
+
+
 </script>
 
 <div class="max-w-3xl mx-auto mt-6 mb-10">
 	{#if isLoading}
 		<Loader />
 	{/if}
+
+	<!-- Rapporttype Vælger -->
+<div class="mb-4">
+    <label for="report-type" class="block text-gray-700 font-semibold mb-2">Vælg rapporttype:</label>
+    <select
+      id="report-type"
+      bind:value={selectedReportTypeIndex}
+      class="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+    >
+      {#each reportTypeOptions as option, index}
+        <option value={index}>{option.label}</option>
+      {/each}
+    </select>
+  </div>
 	<div class="flex justify-between items-center mb-4">
-		<button
-			class="px-6 py-2 bg-[#D14343] text-white font-semibold rounded-lg hover:bg-[#B23030] focus:outline-none focus:ring-2 focus:ring-red-400"
-			on:click={downloadWeeklyReportWithAI}
-		>
-			Ugentlig AI Rapport
-		</button>
-		<div class="flex space-x-4">
+		<!-- Dato- og tidsvælgere -->
+		<div class="mb-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label for="start-date" class="block text-gray-700 font-semibold mb-2">Startdato og tid:</label>
+              <input
+                type="datetime-local"
+                id="start-date"
+                bind:value={startDate}
+                class="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+            <div>
+              <label for="end-date" class="block text-gray-700 font-semibold mb-2">Slutdato og tid:</label>
+              <input
+                type="datetime-local"
+                id="end-date"
+                bind:value={endDate}
+                class="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+          </div>
+
+		<div class="flex space-x-4 ml-4">
 			<button
-				class="px-6 py-2 bg-[#D14343] text-white font-semibold rounded-lg hover:bg-[#B23030] focus:outline-none focus:ring-2 focus:ring-red-400"
+				class="px-6 py-2 bg-costumRed text-white font-semibold rounded-lg hover:bg-costumRedHover focus:outline-none focus:ring-2 focus:ring-red-400"
 				on:click={downloadPDF}
 			>
 				Download PDF
 			</button>
 			<button
-				class="px-6 py-2 bg-[#D14343] text-white font-semibold rounded-lg hover:bg-[#B23030] focus:outline-none focus:ring-2 focus:ring-red-400"
+				class="px-6 py-2 bg-costumRed text-white font-semibold rounded-lg hover:bg-costumRedHover focus:outline-none focus:ring-2 focus:ring-red-400"
 				on:click={downloadPDFWithAI}
 			>
 				Download PDF AI
@@ -271,7 +359,7 @@
 		</div>
 	</div>
 
-	<div class="report-list overflow-y-auto h-96">
+	<div class="report-list overflow-y-auto h-[33rem]">
 		{#if $reports.length > 0}
 			<ul>
 				{#each $reports as report}

@@ -20,7 +20,7 @@
 	}
 </script>
 
-<div class="max-w-lg mx-auto p-4">
+<div class="max-w-3xl mx-auto">
 	<h2 class="text-4xl font-semibold text-center my-6">{reportTitle}</h2>
 
 	<form on:submit|preventDefault={handleCreateReport}>
