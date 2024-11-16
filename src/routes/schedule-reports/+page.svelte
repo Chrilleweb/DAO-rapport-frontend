@@ -23,6 +23,7 @@
 
 	let scheduledReports = [];
 	let isEditing = false;
+  let editingType = ''; // 'Planlagt rapport' eller 'comment'
 	let editingItem = null;
 
 	// SuccessModal state
@@ -340,12 +341,12 @@
 		{/if}
 	</div>
 
-	<!-- EditModal komponent til at redigere planlagte rapporter og kommentarer -->
-	<EditModal
+
+  <EditModal
 		show={isEditing}
-		title={editingItem?.report_type ? 'Rediger Planlagt Rapport' : 'Rediger Kommentar'}
+		title={editingType === 'report' ? 'Rediger Plantlagt Rapport' : 'Rediger Kommentar'}
 		content={editingItem?.content || ''}
-		placeholder={editingItem?.report_type
+		placeholder={editingType === 'report'
 			? 'Rediger rapportens indhold her...'
 			: 'Rediger kommentarens indhold her...'}
 		onSave={handleEditSubmit}
