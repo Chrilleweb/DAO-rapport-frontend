@@ -108,11 +108,25 @@
 		socket.on('new report', (newReport) => {
 			const reportTypeId = Number(newReport.report_type_id);
 			const userId = Number(newReport.user_id);
+
 			if (reportTypeIds.includes(reportTypeId)) {
+				// Opdater rapporter
 				reports.update((currentReports) => [
-					{ ...newReport, report_type_id: reportTypeId, user_id: userId },
+					{
+						...newReport,
+						report_type_id: reportTypeId,
+						user_id: userId
+					},
 					...currentReports
 				]);
+
+				// Opdater kommentarer for den nye rapport
+				if (newReport.comments) {
+					comments.update((currentComments) => ({
+						...currentComments,
+						[newReport.id]: newReport.comments
+					}));
+				}
 			}
 		});
 
