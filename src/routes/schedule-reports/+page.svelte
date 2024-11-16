@@ -1,4 +1,5 @@
 <script>
+	import { writable } from 'svelte/store';
 	import SuccessModal from '$lib/components/ui/SuccessModal.svelte';
 	import { page } from '$app/stores';
 	import socket from '$lib/socket';
@@ -23,15 +24,15 @@
 
 	let scheduledReports = [];
 	let isEditing = false;
-  let editingType = ''; // 'Planlagt rapport' eller 'comment'
+	let editingType = ''; // 'Planlagt rapport' eller 'comment'
 	let editingItem = null;
 
 	// SuccessModal state
 	let successMessage = '';
 	let showSuccessModal = false;
 
-	// Kommentarer for planlagte rapporter
-	let scheduleReportComments = {};
+	// Kommentarer for planlagte rapporter som en writable store
+	let scheduleReportComments = writable({});
 	let newScheduleReportCommentContent = {};
 
 	function submitScheduledReport() {
@@ -101,6 +102,7 @@
 			content
 		});
 
+		// Nulstil tekstfeltet
 		newScheduleReportCommentContent[reportId] = '';
 	}
 
@@ -152,29 +154,26 @@
 
 		// Kommentarer på planlagte rapporter
 		socket.on('all schedule report comments', (comments) => {
-			scheduleReportComments = comments;
+			scheduleReportComments.set(comments);
 		});
 
 		socket.on('new schedule report comment', (newComment) => {
 			const reportId = newComment.schedule_report_id;
-			if (!scheduleReportComments[reportId]) {
-				scheduleReportComments[reportId] = [];
-			}
-			scheduleReportComments[reportId].push({
-				...newComment,
-				id: Number(newComment.id),
-				schedule_report_id: Number(newComment.schedule_report_id),
-				user_id: Number(newComment.user_id)
+			scheduleReportComments.update((current) => {
+				const reportComments = current[reportId] || [];
+				return { ...current, [reportId]: [...reportComments, newComment] };
 			});
 		});
 
 		socket.on('update schedule report comment', (updatedComment) => {
 			const reportId = updatedComment.schedule_report_id;
-			if (scheduleReportComments[reportId]) {
-				scheduleReportComments[reportId] = scheduleReportComments[reportId].map((comment) =>
-					comment.id === updatedComment.id ? updatedComment : comment
+			scheduleReportComments.update((current) => {
+				if (!current[reportId]) return current;
+				const updatedComments = current[reportId].map((c) =>
+					c.id === updatedComment.id ? updatedComment : c
 				);
-			}
+				return { ...current, [reportId]: updatedComments };
+			});
 		});
 
 		socket.on('new schedule report comment error', (error) => {
@@ -299,7 +298,7 @@
 
 						<!-- Kommentarer -->
 						<div class="mt-4">
-							{#each scheduleReportComments[report.id] || [] as comment}
+							{#each $scheduleReportComments[report.id] || [] as comment}
 								<div class="comment bg-[#fff7ee] p-4 rounded-lg mt-2">
 									<div class="flex justify-between">
 										<p class="font-semibold">{comment.firstname} {comment.lastname}</p>
@@ -341,10 +340,10 @@
 		{/if}
 	</div>
 
-
-  <EditModal
+	<!-- EditModal komponent til at redigere planlagte rapporter og kommentarer -->
+	<EditModal
 		show={isEditing}
-		title={editingType === 'report' ? 'Rediger Plantlagt Rapport' : 'Rediger Kommentar'}
+		title={editingType === 'report' ? 'Rediger Planlagt Rapport' : 'Rediger Kommentar'}
 		content={editingItem?.content || ''}
 		placeholder={editingType === 'report'
 			? 'Rediger rapportens indhold her...'
