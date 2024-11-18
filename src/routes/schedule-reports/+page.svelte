@@ -24,7 +24,7 @@
 
 	let scheduledReports = [];
 	let isEditing = false;
-	let editingType = ''; // 'Planlagt rapport' eller 'comment'
+	let editingType = ''; // 'report' eller 'comment'
 	let editingItem = null;
 
 	// SuccessModal state
@@ -36,12 +36,6 @@
 	let newScheduleReportCommentContent = {};
 
 	function submitScheduledReport() {
-		if (!reportContent.trim() || !scheduledDateTime) {
-			alert('Venligst udfyld både rapportindhold og planlagt tidspunkt.');
-			return;
-		}
-
-		// Emit event til serveren med de nødvendige data
 		socket.emit('schedule report', {
 			user_id: Number(user.id),
 			content: reportContent.trim(),
@@ -66,18 +60,16 @@
 		editingType = '';
 	}
 
-	function handleEditSubmit(updatedContent) {
-		if (updatedContent.trim() === '') {
-			alert('Indholdet kan ikke være tomt.');
-			return;
-		}
-
+	function handleEditSubmit(updatedContent, updatedScheduledTime) {
 		if (editingType === 'report') {
-			socket.emit('edit scheduled report', {
+			const updatedData = {
 				reportId: editingItem.id,
 				userId: Number(user.id),
-				updatedContent: updatedContent.trim()
-			});
+				updatedContent: updatedContent.trim(),
+				updatedScheduledTime: updatedScheduledTime // Denne er nu krævet
+			};
+
+			socket.emit('edit scheduled report', updatedData);
 		} else if (editingType === 'comment') {
 			socket.emit('edit schedule report comment', {
 				commentId: editingItem.id,
@@ -124,7 +116,8 @@
 			scheduledReports = reports.map((report) => ({
 				...report,
 				user_id: Number(report.user_id),
-				report_type_id: Number(report.report_type_id)
+				report_type_id: Number(report.report_type_id),
+				isScheduled: true
 			}));
 		});
 
@@ -133,7 +126,8 @@
 				{
 					...newReport,
 					user_id: Number(newReport.user_id),
-					report_type_id: Number(newReport.report_type_id)
+					report_type_id: Number(newReport.report_type_id),
+					isScheduled: true
 				},
 				...scheduledReports
 			];
@@ -143,6 +137,10 @@
 		});
 
 		socket.on('update scheduled report', (updatedReport) => {
+			updatedReport = {
+				...updatedReport,
+				isScheduled: true
+			};
 			scheduledReports = scheduledReports.map((report) =>
 				report.id === updatedReport.id ? updatedReport : report
 			);
@@ -207,9 +205,12 @@
 </script>
 
 <div class="max-w-3xl mx-auto">
+	<!-- Success Modal -->
 	<SuccessModal message={successMessage} show={showSuccessModal} />
+
 	<h2 class="text-4xl font-semibold text-center my-6">Planlæg en rapport</h2>
 
+	<!-- Formular til at planlægge en ny rapport -->
 	<form on:submit|preventDefault={submitScheduledReport}>
 		<div>
 			<label for="reportContent" class="sr-only">Rapportindhold</label>
@@ -223,6 +224,7 @@
 		</div>
 
 		<div class="mb-4 grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+			<!-- Planlagt Dato og Tid -->
 			<div>
 				<label for="scheduledDateTime" class="block text-gray-700 font-semibold mb-2">
 					Planlagt dato og tid:
@@ -236,6 +238,7 @@
 				/>
 			</div>
 
+			<!-- Vælg Rapporttype -->
 			<div>
 				<label for="reportType" class="block text-gray-700 font-semibold mb-2">
 					Vælg rapporttype:
@@ -345,6 +348,8 @@
 		show={isEditing}
 		title={editingType === 'report' ? 'Rediger Planlagt Rapport' : 'Rediger Kommentar'}
 		content={editingItem?.content || ''}
+		scheduledTime={editingItem?.scheduled_time || ''}
+		isScheduledReport={editingType === 'report' && editingItem?.isScheduled}
 		placeholder={editingType === 'report'
 			? 'Rediger rapportens indhold her...'
 			: 'Rediger kommentarens indhold her...'}
