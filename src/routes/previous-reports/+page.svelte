@@ -26,7 +26,10 @@
 		{ label: 'UBD', ids: [2] },
 		{ label: 'Pakkeshop', ids: [4] },
 		{ label: 'Indhentning', ids: [3] },
-		{ label: 'Ledelse', ids: [5] }
+		{ label: 'Ledelse', ids: [5] },
+        { label: 'EKL', ids: [6] },
+        { label: 'Transport', ids: [7] },
+        { label: 'IT', ids: [8] }
 	];
 
 	let selectedReportTypeIndex = 0; // Default to 'Alle'

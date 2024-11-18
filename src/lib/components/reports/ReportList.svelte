@@ -7,10 +7,7 @@
 	import socket from '$lib/socket';
 	import { page } from '$app/stores';
 	import { processReportsWithAI } from '$lib/api/openai.js';
-	import {
-		generateStandardPDF,
-		generateAIPDF
-	} from '$lib/utils/pdfGenerator.js';
+	import { generateStandardPDF, generateAIPDF } from '$lib/utils/pdfGenerator.js';
 	import Loader from '../ui/Loader.svelte';
 
 	export let reportTypeIds = [];
@@ -30,7 +27,10 @@
 		{ label: 'UBD', id: 2 },
 		{ label: 'Pakkeshop', id: 4 },
 		{ label: 'Indhentning', id: 3 },
-		{ label: 'Ledelse', id: 5 }
+		{ label: 'Ledelse', id: 5 },
+		{ label: 'EKL', id: 6 },
+		{ label: 'Transport', id: 7 },
+		{ label: 'IT', id: 8 }
 	];
 
 	function openEditModal(item, type) {
@@ -250,7 +250,6 @@
 			isLoading = false;
 		}
 	}
-
 </script>
 
 <div class="max-w-3xl mx-auto mt-6 mb-10">
@@ -258,9 +257,7 @@
 		<Loader />
 	{/if}
 	<div class="flex justify-between items-center mb-4">
-		<p class="text-2xl font-bold text-gray-800 tracking-wide">
-			Rapporter
-		</p>
+		<p class="text-2xl font-bold text-gray-800 tracking-wide">Rapporter</p>
 		<div class="flex space-x-4">
 			<button
 				class="px-6 py-2 bg-[#D14343] text-white font-semibold rounded-lg hover:bg-[#B23030] focus:outline-none focus:ring-2 focus:ring-red-400"

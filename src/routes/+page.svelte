@@ -2,7 +2,7 @@
 	import CreateReport from '../lib/components/reports/CreateReport.svelte';
 	import ReportList from '../lib/components/reports/ReportList.svelte';
 
-	const reportTypeIds = [1, 2, 3, 4, 5]; // ALLE Report typer
+	const reportTypeIds = [1, 2, 3, 4, 5, 6, 7, 8]; // ALLE Report typer
 </script>
 
 <svelte:head>
