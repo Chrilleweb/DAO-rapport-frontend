@@ -60,16 +60,19 @@
 		editingType = '';
 	}
 
-	function handleEditSubmit(updatedContent, updatedScheduledTime) {
+	function handleEditSubmit(updatedData) {
+		const { updatedContent, updatedScheduledTime, updatedReportTypeId } = updatedData;
+
 		if (editingType === 'report') {
-			const updatedData = {
+			const updatedFields = {
 				reportId: editingItem.id,
 				userId: Number(user.id),
 				updatedContent: updatedContent.trim(),
-				updatedScheduledTime: updatedScheduledTime // Denne er nu krævet
+				updatedScheduledTime,
+				updatedReportTypeId: Number(updatedReportTypeId)
 			};
 
-			socket.emit('edit scheduled report', updatedData);
+			socket.emit('edit scheduled report', updatedFields);
 		} else if (editingType === 'comment') {
 			socket.emit('edit schedule report comment', {
 				commentId: editingItem.id,
@@ -350,6 +353,8 @@
 		content={editingItem?.content || ''}
 		scheduledTime={editingItem?.scheduled_time || ''}
 		isScheduledReport={editingType === 'report' && editingItem?.isScheduled}
+		{reportTypeOptions}
+		selectedReportTypeId={editingItem?.report_type_id || reportTypeOptions[0].id}
 		placeholder={editingType === 'report'
 			? 'Rediger rapportens indhold her...'
 			: 'Rediger kommentarens indhold her...'}

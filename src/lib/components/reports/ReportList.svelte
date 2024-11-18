@@ -26,6 +26,14 @@
 	let editingType = ''; // 'report' eller 'comment'
 	let isLoading = false;
 
+	let reportTypeOptions = [
+		{ label: 'Alle', id: 1 },
+		{ label: 'UBD', id: 2 },
+		{ label: 'Pakkeshop', id: 4 },
+		{ label: 'Indhentning', id: 3 },
+		{ label: 'Ledelse', id: 5 }
+	];
+
 	function openEditModal(item, type) {
 		isEditing = true;
 		editingItem = item;
@@ -38,7 +46,8 @@
 		editingType = '';
 	}
 
-	function handleEditSubmit(updatedContent) {
+	function handleEditSubmit(updatedData) {
+		const { updatedContent, updatedReportTypeId } = updatedData;
 		if (updatedContent.trim() === '') {
 			alert('Indholdet kan ikke være tomt.');
 			return;
@@ -48,7 +57,8 @@
 			socket.emit('edit report', {
 				reportId: editingItem.id,
 				userId: Number(user.id),
-				updatedContent: updatedContent.trim()
+				updatedContent: updatedContent.trim(),
+				updatedReportTypeId: Number(updatedReportTypeId)
 			});
 		} else if (editingType === 'comment') {
 			socket.emit('edit comment', {
@@ -365,6 +375,8 @@
 		show={isEditing}
 		title={editingType === 'report' ? 'Rediger Rapport' : 'Rediger Kommentar'}
 		content={editingItem?.content || ''}
+		{reportTypeOptions}
+		selectedReportTypeId={editingItem?.report_type_id || reportTypeOptions[0].id}
 		placeholder={editingType === 'report'
 			? 'Rediger rapportens indhold her...'
 			: 'Rediger kommentarens indhold her...'}

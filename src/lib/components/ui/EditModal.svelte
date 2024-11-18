@@ -7,19 +7,28 @@
 	export let onSave = () => {};
 	export let onCancel = () => {};
 	export let placeholder = '';
+	export let reportTypeOptions = [];
+	export let selectedReportTypeId = null;
 
 	let updatedContent = '';
 	let updatedScheduledTime = '';
+	let updatedReportTypeId = null; 
 
 	$: if (show) {
 		updatedContent = content;
 		updatedScheduledTime = isScheduledReport ? scheduledTime : '';
+		updatedReportTypeId = selectedReportTypeId; 
 	}
 
 	function handleSubmit(event) {
 		event.preventDefault();
 		if (event.target.checkValidity()) {
-			onSave(updatedContent, updatedScheduledTime);
+			const updatedData = {
+				updatedContent,
+				updatedScheduledTime: isScheduledReport ? updatedScheduledTime : null,
+				updatedReportTypeId
+			};
+			onSave(updatedData);
 		} else {
 			event.target.reportValidity();
 		}
@@ -56,6 +65,23 @@
 						class="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2"
 						required
 					/>
+				{/if}
+
+				{#if title.includes('Rapport')}
+					<!-- Vælg Rapporttype -->
+					<label for="reportType" class="block mt-4 text-gray-700 font-semibold mb-2">
+						Vælg rapporttype:
+					</label>
+					<select
+						id="reportType"
+						bind:value={updatedReportTypeId}
+						class="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2"
+						required
+					>
+						{#each reportTypeOptions as option}
+							<option value={option.id}>{option.label}</option>
+						{/each}
+					</select>
 				{/if}
 
 				<div class="flex justify-end p-4 space-x-4">
