@@ -6,11 +6,10 @@
 	import { writable } from 'svelte/store';
 	import socket from '$lib/socket';
 	import { page } from '$app/stores';
-	import { processReportsWithAI, processWeeklyReportsWithAI } from '$lib/api/openai.js';
+	import { processReportsWithAI } from '$lib/api/openai.js';
 	import {
 		generateStandardPDF,
-		generateAIPDF,
-		generateWeeklyAIPDF
+		generateAIPDF
 	} from '$lib/utils/pdfGenerator.js';
 	import Loader from '../ui/Loader.svelte';
 
@@ -252,20 +251,6 @@
 		}
 	}
 
-	async function downloadWeeklyReportWithAI() {
-		try {
-			isLoading = true;
-			const processedData = await processWeeklyReportsWithAI(reportTypeIds);
-			const uniqueReportTypes = [...new Set($reports.map((report) => report.report_type))];
-			const reportType = uniqueReportTypes.length > 1 ? 'Samlet' : uniqueReportTypes[0];
-			generateWeeklyAIPDF(processedData, reportType);
-		} catch (error) {
-			console.error('Fejl ved generering af den ugentlige rapport med AI:', error);
-			alert('Der opstod en fejl ved generering af den ugentlige rapport med AI.');
-		} finally {
-			isLoading = false;
-		}
-	}
 </script>
 
 <div class="max-w-3xl mx-auto mt-6 mb-10">
@@ -273,12 +258,9 @@
 		<Loader />
 	{/if}
 	<div class="flex justify-between items-center mb-4">
-		<button
-			class="px-6 py-2 bg-[#D14343] text-white font-semibold rounded-lg hover:bg-[#B23030] focus:outline-none focus:ring-2 focus:ring-red-400"
-			on:click={downloadWeeklyReportWithAI}
-		>
-			Ugentlig AI Rapport
-		</button>
+		<p class="text-2xl font-bold text-gray-800 tracking-wide">
+			Rapporter
+		</p>
 		<div class="flex space-x-4">
 			<button
 				class="px-6 py-2 bg-[#D14343] text-white font-semibold rounded-lg hover:bg-[#B23030] focus:outline-none focus:ring-2 focus:ring-red-400"
