@@ -21,19 +21,30 @@
 	let editingType = ''; // 'report' eller 'comment'
 	let isLoading = false;
 
-	let reportTypeOptions = [
+	let reportTypeOptionsDisplay = [
 		{ label: 'Alle', ids: [1, 2, 3, 4, 5] },
 		{ label: 'UBD', ids: [2] },
 		{ label: 'Pakkeshop', ids: [4] },
 		{ label: 'Indhentning', ids: [3] },
 		{ label: 'Ledelse', ids: [5] },
-        { label: 'EKL', ids: [6] },
-        { label: 'Transport', ids: [7] },
-        { label: 'IT', ids: [8] }
+		{ label: 'EKL', ids: [6] },
+		{ label: 'Transport', ids: [7] },
+		{ label: 'IT', ids: [8] }
+	];
+
+	let reportTypeOptions = [
+		{ label: 'Alle', id: 1 },
+		{ label: 'UBD', id: 2 },
+		{ label: 'Pakkeshop', id: 4 },
+		{ label: 'Indhentning', id: 3 },
+		{ label: 'Ledelse', id: 5 },
+		{ label: 'EKL', id: 6 },
+		{ label: 'Transport', id: 7 },
+		{ label: 'IT', id: 8 }
 	];
 
 	let selectedReportTypeIndex = 0; // Default to 'Alle'
-	$: reportTypeIds = reportTypeOptions[selectedReportTypeIndex].ids;
+	$: reportTypeIds = reportTypeOptionsDisplay[selectedReportTypeIndex].ids;
 
 	let startDate;
 	let endDate;
@@ -71,7 +82,9 @@
 		editingType = '';
 	}
 
-	function handleEditSubmit(updatedContent) {
+	function handleEditSubmit(updatedData) {
+		const { updatedContent, updatedReportTypeId } = updatedData;
+
 		if (updatedContent.trim() === '') {
 			alert('Indholdet kan ikke være tomt.');
 			return;
@@ -81,7 +94,8 @@
 			socket.emit('edit report', {
 				reportId: editingItem.id,
 				userId: Number(user.id),
-				updatedContent: updatedContent.trim()
+				updatedContent: updatedContent.trim(),
+				updatedReportTypeId: Number(updatedReportTypeId)
 			});
 		} else if (editingType === 'comment') {
 			socket.emit('edit comment', {
@@ -318,7 +332,7 @@
 			bind:value={selectedReportTypeIndex}
 			class="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
 		>
-			{#each reportTypeOptions as option, index}
+			{#each reportTypeOptionsDisplay as option, index}
 				<option value={index}>{option.label}</option>
 			{/each}
 		</select>
@@ -445,6 +459,8 @@
 		show={isEditing}
 		title={editingType === 'report' ? 'Rediger Rapport' : 'Rediger Kommentar'}
 		content={editingItem?.content || ''}
+		{reportTypeOptions}
+		selectedReportTypeId={editingItem?.report_type_id || reportTypeOptions[0].id}
 		placeholder={editingType === 'report'
 			? 'Rediger rapportens indhold her...'
 			: 'Rediger kommentarens indhold her...'}
