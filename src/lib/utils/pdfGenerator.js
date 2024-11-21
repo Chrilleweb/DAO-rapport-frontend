@@ -38,7 +38,7 @@ export function generateStandardPDF(reports, reportType) {
 		const contentHeight = splitContent.length * 6;
 		const commentsHeight = (report.comments || []).reduce((acc, comment) => {
 			const splitComment = doc.splitTextToSize(comment.content, pageWidth - 60);
-			return acc + splitComment.length * 6 + 10; // 10 ekstra for header og mellemrum
+			return acc + splitComment.length * 6 + 15; // 15 ekstra for navn, dato og mellemrum
 		}, 0);
 		return contentHeight + 3 * 8 + padding * 2 + commentsHeight;
 	};
@@ -94,9 +94,10 @@ export function generateStandardPDF(reports, reportType) {
 
 				doc.setFontSize(10);
 				doc.setTextColor('#000000');
-				doc.text(`${comment.firstname} ${comment.lastname}`, 15, yPosition);
+				// Inkluderer nu datoen sammen med navnet
+				doc.text(`${comment.firstname} ${comment.lastname} - ${comment.created_at}`, 15, yPosition);
 				yPosition += 5;
-				doc.setFontSize(10);
+
 				const splitComment = doc.splitTextToSize(comment.content, pageWidth - 60);
 				splitComment.forEach((line) => {
 					doc.text(line, 20, yPosition);
