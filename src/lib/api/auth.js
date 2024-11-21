@@ -1,6 +1,6 @@
 export async function loginUser({ email, password }) {
 	try {
-		const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/login`, {
+		const response = await fetch('/login', {
 			method: 'POST',
 			headers: {
 				'Content-Type': 'application/json'
@@ -24,7 +24,7 @@ export async function loginUser({ email, password }) {
 
 export async function changePassword({ newPassword, confirmPassword }) {
 	try {
-		const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/auth/change-password`, {
+		const response = await fetch('/auth/change-password', {
 			method: 'POST',
 			headers: {
 				'Content-Type': 'application/json'
@@ -48,7 +48,7 @@ export async function changePassword({ newPassword, confirmPassword }) {
 
 export async function logoutUser() {
 	try {
-		const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/logout`, {
+		const response = await fetch('/logout', {
 			method: 'GET',
 			credentials: 'include'
 		});
