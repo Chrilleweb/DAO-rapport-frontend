@@ -67,10 +67,12 @@ export function generateStandardPDF(reports, reportType) {
 		yPosition += 15;
 		doc.setFontSize(12);
 		doc.setTextColor(textColor);
+		doc.text(`Log: ${report.id}`, 12, yPosition);
+		yPosition += 6;
 		doc.text(`${report.firstname} ${report.lastname}`, 12, yPosition);
 		yPosition += 6;
 		doc.text(`${report.report_type}`, 12, yPosition);
-		yPosition += 6;
+		yPosition += 12;
 
 		const splitContent = doc.splitTextToSize(report.content, pageWidth - 40);
 		splitContent.forEach((line) => {
