@@ -107,7 +107,6 @@
 			<table class="min-w-full bg-white shadow-md rounded-lg">
 				<thead>
 					<tr class="bg-HeaderBg text-white">
-						<th class="w-1/12 text-left py-3 px-4 uppercase font-semibold text-sm">ID</th>
 						<th class="w-2/12 text-left py-3 px-4 uppercase font-semibold text-sm">Navn</th>
 						<th class="w-3/12 text-left py-3 px-4 uppercase font-semibold text-sm">Email</th>
 						<th class="w-2/12 text-left py-3 px-4 uppercase font-semibold text-sm">Rolle</th>
@@ -117,7 +116,6 @@
 				<tbody class="text-gray-700">
 					{#each users as user, index}
 						<tr class="{index % 2 === 0 ? 'bg-gray-100' : 'bg-white'} hover:bg-gray-200">
-							<td class="text-left py-3 px-4">{user.id}</td>
 							<td class="text-left py-3 px-4">{user.firstname} {user.lastname}</td>
 							<td class="text-left py-3 px-4">{user.email}</td>
 							<td class="text-left py-3 px-4 capitalize">{user.role}</td>
@@ -141,6 +139,7 @@
 								>
 									<option value="user">User</option>
 									<option value="admin">Admin</option>
+									<option value="system">System</option>
 								</select>
 							</td>
 						</tr>
