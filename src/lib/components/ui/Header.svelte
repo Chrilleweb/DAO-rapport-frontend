@@ -1,6 +1,6 @@
 <script>
 	import { FontAwesomeIcon } from '@fortawesome/svelte-fontawesome';
-	import { faTruck, faNewspaper, faSignOutAlt, faBox, faFlag, faUserTie, faCogs, faUserPlus, faBackward, faCalendarDays } from '@fortawesome/free-solid-svg-icons';
+	import { faTruck, faNewspaper, faSignOutAlt, faBox, faFlag, faUserTie, faCogs, faUserPlus, faBackward, faCalendarDays, faServer } from '@fortawesome/free-solid-svg-icons';
 	import { logoutUser } from '$lib/api/auth';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
@@ -13,6 +13,9 @@
 		{ name: 'Pakkeshop', link: '/recent-pakkeshop-reports', icon: faBox },
 		{ name: 'Indhentning', link: '/recent-indhentning-reports', icon: faTruck },
 		{ name: 'Ledelse', link: '/recent-ledelse-reports', icon: faUserTie },
+		{ name: 'EKL', link: '/recent-EKL-reports', icon: faTruck },
+		{ name: 'Transport', link: '/recent-transport-reports', icon: faTruck },
+		{ name: 'IT', link: '/recent-IT-reports', icon: faServer },
 		{ name: 'Tidl. rapporter', link: '/previous-reports', icon: faBackward },
 		{ name: 'Plan. rapporter', link: '/schedule-reports', icon: faCalendarDays },
 		// Admin page 
