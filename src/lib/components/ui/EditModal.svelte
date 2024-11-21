@@ -9,6 +9,7 @@
 	export let placeholder = '';
 	export let reportTypeOptions = [];
 	export let selectedReportTypeId = null;
+  export let isOwner = false;
 
 	let updatedContent = '';
 	let updatedScheduledTime = '';
@@ -45,6 +46,7 @@
 			<form on:submit={handleSubmit} class="p-6">
 				<h2 class="text-2xl font-semibold mb-4 text-center">{title}</h2>
 
+        {#if isOwner}
 				<!-- Rapportens Indhold -->
 				<textarea
 					class="w-full h-40 p-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2"
@@ -66,6 +68,7 @@
 						required
 					/>
 				{/if}
+        {/if}
 
 				{#if title.includes('Rapport')}
 					<!-- Vælg Rapporttype -->

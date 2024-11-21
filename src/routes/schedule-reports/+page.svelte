@@ -29,6 +29,7 @@
 	let isEditing = false;
 	let editingType = ''; // 'report' eller 'comment'
 	let editingItem = null;
+	let isOwner = false;
 
 	// SuccessModal state
 	let successMessage = '';
@@ -55,6 +56,7 @@
 		isEditing = true;
 		editingItem = item;
 		editingType = type;
+		isOwner = item.user_id === Number(user.id);
 	}
 
 	function closeEditModal() {
@@ -64,18 +66,24 @@
 	}
 
 	function handleEditSubmit(updatedData) {
-		const { updatedContent, updatedScheduledTime, updatedReportTypeId } = updatedData;
+		const { updatedContent, updatedReportTypeId } = updatedData;
 
 		if (editingType === 'report') {
-			const updatedFields = {
+			const payload = {
 				reportId: editingItem.id,
 				userId: Number(user.id),
-				updatedContent: updatedContent.trim(),
-				updatedScheduledTime,
 				updatedReportTypeId: Number(updatedReportTypeId)
 			};
 
-			socket.emit('edit scheduled report', updatedFields);
+			if (isOwner) {
+				if (updatedContent.trim() === '') {
+					alert('Indholdet kan ikke være tomt.');
+					return;
+				}
+				payload.updatedContent = updatedContent.trim();
+			}
+
+			socket.emit('edit scheduled report', payload);
 		} else if (editingType === 'comment') {
 			socket.emit('edit schedule report comment', {
 				commentId: editingItem.id,
@@ -281,7 +289,6 @@
 					<li class="bg-[#ECE0D1] py-6 px-6 rounded-lg shadow-md mb-4 flex flex-col">
 						<div class="flex justify-between items-center mb-4">
 							<div class="text-gray-600 text-base flex gap-3">
-                <p>Log: {report.id}</p>
 								<p>{report.firstname} {report.lastname}</p>
 								<p>{report.scheduled_time}</p>
 							</div>
@@ -295,15 +302,13 @@
 						</p>
 
 						<div class="flex justify-end items-center mt-4 gap-4">
-							{#if report.user_id === Number(user.id)}
-								<button
-									class="text-gray-600 hover:text-gray-800 focus:outline-none flex items-center"
-									on:click={() => openEditModal(report, 'report')}
-								>
-									<FontAwesomeIcon icon={faEdit} class="h-6 w-6 mr-2" />
-									Rediger
-								</button>
-							{/if}
+							<button
+								class="text-gray-600 hover:text-gray-800 focus:outline-none flex items-center"
+								on:click={() => openEditModal(report, 'report')}
+							>
+								<FontAwesomeIcon icon={faEdit} class="h-6 w-6 mr-2" />
+								Rediger
+							</button>
 						</div>
 
 						<!-- Kommentarer -->
@@ -364,5 +369,6 @@
 			: 'Rediger kommentarens indhold her...'}
 		onSave={handleEditSubmit}
 		onCancel={closeEditModal}
+    isOwner={isOwner}
 	/>
 </div>
