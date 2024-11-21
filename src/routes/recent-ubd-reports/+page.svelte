@@ -11,7 +11,7 @@
 </svelte:head>
 
 <div>
-	<CreateReport reportType={2} reportTitle="UBD rapport" />
+	<CreateReport reportType={2} reportTitle="UBD rapport (sidste 24 timer)" />
 
 	<ReportList {reportTypeIds} />
 </div>

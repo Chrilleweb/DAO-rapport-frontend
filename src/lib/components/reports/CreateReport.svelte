@@ -3,7 +3,7 @@
 	import socket from '$lib/socket';
 
 	export let reportType; // Denne modtager rapporttypen som en prop
-	export let reportTitle = 'Samlet rapport'; // Default titel
+	export let reportTitle = 'Samlet rapport (sidste 24 timer)'; // Default titel
 	let content = '';
 
 	$: user = $page.data.user;
