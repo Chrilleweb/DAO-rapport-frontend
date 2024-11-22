@@ -4,7 +4,7 @@
 	"scripts": {
 		"dev": "vite dev",
 		"build": "vite build",
-		"start": "vite start",
+		"start": "node build",
 		"preview": "vite preview",
 		"lint": "prettier --check . && eslint .",
 		"format": "prettier --write ."
@@ -32,6 +32,7 @@
 	"dependencies": {
 		"@fortawesome/free-solid-svg-icons": "^6.6.0",
 		"@fortawesome/svelte-fontawesome": "^0.2.2",
+		"@sveltejs/adapter-node": "^5.2.9",
 		"jsonwebtoken": "^9.0.2",
 		"jspdf": "^2.5.2",
 		"socket.io-client": "^4.8.0"
