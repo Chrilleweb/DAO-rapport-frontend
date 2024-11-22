@@ -11,9 +11,14 @@ export function validateSession(event) {
 
   if (token) {
     try {
+      // Check if the token is not empty or malformed
+      if (!token || token === 'undefined') {
+        throw new Error('Invalid token');
+      }
+
       const decoded = jwt.verify(token, import.meta.env.VITE_JWT_SECRET);
 
-      // Tilføj brugerdata til event.locals
+      // Add user data to event.locals
       event.locals.user = {
         id: decoded.userId,
         firstname: decoded.firstname,
@@ -23,13 +28,23 @@ export function validateSession(event) {
     } catch (err) {
       console.error('Token validation failed:', err);
       event.cookies.delete('token', { path: '/' });
-      throw redirect(302, '/login');
+      if (event.url.pathname !== '/login') {
+        throw redirect(302, '/login');
+      } else {
+        return;
+      }
     }
   }
 
-  if (requiresPasswordChange === 'true' && event.url.pathname !== '/change-password') {
+  if (
+    requiresPasswordChange === 'true' &&
+    event.url.pathname !== '/change-password'
+  ) {
     throw redirect(302, '/change-password');
-  } else if (requiresPasswordChange !== 'true' && event.url.pathname === '/change-password') {
+  } else if (
+    requiresPasswordChange !== 'true' &&
+    event.url.pathname === '/change-password'
+  ) {
     throw redirect(302, '/');
   }
 }

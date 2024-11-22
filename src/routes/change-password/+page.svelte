@@ -17,7 +17,7 @@
         try {
             await changePassword({ newPassword, confirmPassword });
             message = "Password changed successfully!";
-            goto('/'); 
+            await goto('/'); 
         } catch (err) {
             message = err.message || 'Der opstod en fejl';
         }
