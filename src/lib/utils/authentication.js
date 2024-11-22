@@ -36,7 +36,7 @@ export function validateSession(event) {
 
   if (token) {
     try {
-      // Check if the token is not empty or malformed
+      // tjekker om token er udløbet eller ikke er gyldigt  
       if (!token || token === 'undefined') {
         throw new Error('Invalid token');
       }

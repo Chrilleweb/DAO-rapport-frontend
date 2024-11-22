@@ -5,6 +5,8 @@
 		"dev": "vite dev",
 		"build": "vite build",
 		"start": "node build/index.js",
+		"test": "cypress run",
+		"e2e": "cypress open",
 		"preview": "vite preview",
 		"lint": "prettier --check . && eslint .",
 		"format": "prettier --write ."
@@ -17,6 +19,7 @@
 		"@sveltejs/vite-plugin-svelte": "^3.0.0",
 		"@types/eslint": "^9.6.0",
 		"autoprefixer": "^10.4.20",
+		"cypress": "^13.16.0",
 		"eslint": "^9.0.0",
 		"eslint-config-prettier": "^9.1.0",
 		"eslint-plugin-svelte": "^2.36.0",

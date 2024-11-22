@@ -32,12 +32,13 @@
 		<form on:submit|preventDefault={handleLogin} class="space-y-4 mt-4">
 			<div>
 				<label for="email" class="block text-sm font-medium text-gray-700">Email</label>
+				<!-- on:input manuel en-vejs synkronisering så den ikke påvirker test og opdatere automatisk -->
 				<input
 					id="email"
 					type="email"
-					bind:value={email}
+					on:input={(e) => email = e.target.value} 
 					class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent sm:text-sm transition duration-200"
-					placeholder="Enter your email"
+					placeholder="Indtast din email"
 					required
 				/>
 			</div>
@@ -49,7 +50,7 @@
 					type="password"
 					bind:value={password}
 					class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent sm:text-sm transition duration-200"
-					placeholder="Enter your password"
+					placeholder="Indtast din adgangskode"
 					required
 				/>
 			</div>
