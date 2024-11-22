@@ -4,7 +4,7 @@
 	import Footer from '../lib/components/ui/Footer.svelte';
 	import { page } from '$app/stores';
 
-	const noHeader = ['/login']
+	const noHeader = ['/login', '/not-allowed']
 </script>
 
 <div class="app">

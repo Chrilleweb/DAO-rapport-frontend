@@ -1,7 +1,32 @@
 import jwt from 'jsonwebtoken';
 import { redirect } from '@sveltejs/kit';
+import ipRangeCheck from 'ip-range-check';
+
+const allowedIPs = (import.meta.env.VITE_ALLOWED_IPS || '').split(',');
 
 export function validateSession(event) {
+    let clientIP = event.getClientAddress();
+
+  // If behind a proxy, use X-Forwarded-For
+  const xForwardedFor = event.request.headers.get('x-forwarded-for');
+  if (xForwardedFor) {
+    clientIP = xForwardedFor.split(',')[0].trim();
+  }
+
+  const isAllowed = allowedIPs.some((range) => ipRangeCheck(clientIP, range));
+
+  if (!isAllowed) {
+    if (event.url.pathname !== '/not-allowed') {
+      throw redirect(302, '/not-allowed');
+    } else {
+      return;
+    }
+  }
+
+  if (isAllowed && event.url.pathname === '/not-allowed') {
+    throw redirect(302, '/');
+  }
+
   const token = event.cookies.get('token');
   const requiresPasswordChange = event.cookies.get('requiresPasswordChange');
 
