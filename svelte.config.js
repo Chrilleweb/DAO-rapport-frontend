@@ -3,17 +3,19 @@ import { vitePreprocess } from '@sveltejs/vite-plugin-svelte';
 
 /** @type {import('@sveltejs/kit').Config} */
 const config = {
-	preprocess: vitePreprocess(),
-	kit: {
-		// adapter-auto only supports some environments, see https://kit.svelte.dev/docs/adapter-auto for a list.
-		// If your environment is not supported, or you settled on a specific environment, switch out the adapter.
-		// See https://kit.svelte.dev/docs/adapters for more information about adapters.
-		adapter: adapter(),
-		alias: {
-			$components: './src/lib/components',
-			$lib: './src/lib',
-		  }
-	}
+  preprocess: vitePreprocess(),
+  kit: {
+    adapter: adapter({
+      env: {
+        port: 'PORT',       // Use the 'PORT' environment variable
+        host: '0.0.0.0'     // Listen on all network interfaces
+      }
+    }),
+    alias: {
+      $components: './src/lib/components',
+      $lib: './src/lib',
+    }
+  }
 };
 
 export default config;
