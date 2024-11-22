@@ -1,14 +1,6 @@
 {
     "rewrites": [
       {
-        "source": "/login",
-        "destination": "https://dao-rapport-backend-dognrapport.up.railway.app/login"
-      },
-      {
-        "source": "/logout",
-        "destination": "https://dao-rapport-backend-dognrapport.up.railway.app/logout"
-      },
-      {
         "source": "/auth/:path*",
         "destination": "https://dao-rapport-backend-dognrapport.up.railway.app/auth/:path*"
       },

@@ -1,6 +1,6 @@
 export async function loginUser({ email, password }) {
 	try {
-		const response = await fetch('/login', {
+		const response = await fetch('/api/login', {
 			method: 'POST',
 			headers: {
 				'Content-Type': 'application/json'
@@ -48,7 +48,7 @@ export async function changePassword({ newPassword, confirmPassword }) {
 
 export async function logoutUser() {
 	try {
-		const response = await fetch('/logout', {
+		const response = await fetch('/api/logout', {
 			method: 'GET',
 			credentials: 'include'
 		});
