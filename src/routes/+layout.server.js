@@ -1,7 +1,8 @@
-export async function load({ locals }) {
-    return {
-      user: locals.user // Send hele user-objektet til frontend
-    };
-  }
-  
-  export const prerender = true;
+import { validateSession } from '$lib/utils/authentication';
+
+export async function load(event) {
+  validateSession(event);
+  return {
+    user: event.locals.user,
+  };
+}
