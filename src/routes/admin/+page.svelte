@@ -139,7 +139,6 @@
 								>
 									<option value="user">User</option>
 									<option value="admin">Admin</option>
-									<option value="system">System</option>
 								</select>
 							</td>
 						</tr>
