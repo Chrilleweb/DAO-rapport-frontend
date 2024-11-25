@@ -417,5 +417,6 @@
 		onCancel={closeEditModal}
 		{isOwner}
 		images={editingItem?.images || []}
+		editingType={editingType}
 	/>
 </div>

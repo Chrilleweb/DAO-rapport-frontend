@@ -11,6 +11,7 @@
 	export let selectedReportTypeId = null;
 	export let isOwner = false;
 	export let images = [];
+	export let editingType = '';
 
 	let updatedContent = '';
 	let updatedScheduledTime = '';
@@ -148,6 +149,7 @@
 						on:paste={handlePaste}
 					></textarea>
 
+					{#if editingType === 'report'}
 					<div class="mt-4">
 						<label for="image">Tilføj billeder (valgfrit)</label>
 						<input
@@ -205,6 +207,7 @@
 							{/each}
 						</div>
 					{/if}
+				{/if}
 
 					{#if isScheduledReport}
 						<!-- Planlagt Dato og Tid -->
