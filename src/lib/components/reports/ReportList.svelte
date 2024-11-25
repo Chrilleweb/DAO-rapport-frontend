@@ -47,8 +47,8 @@
 		editingType = '';
 	}
 
-	function handleEditSubmit(updatedData) {
-		const { updatedContent, updatedReportTypeId } = updatedData;
+	async function handleEditSubmit(updatedData) {
+		const { updatedContent, updatedReportTypeId, imagesToAdd, imagesToRemove } = updatedData;
 
 		if (editingType === 'report') {
 			const payload = {
@@ -63,6 +63,14 @@
 					return;
 				}
 				payload.updatedContent = updatedContent.trim();
+			}
+
+			if (isOwner && imagesToAdd && imagesToAdd.length > 0) {
+				payload.imagesToAdd = imagesToAdd;
+			}
+
+			if (isOwner && imagesToRemove && imagesToRemove.length > 0) {
+				payload.imagesToRemove = imagesToRemove;
 			}
 
 			socket.emit('edit report', payload);
@@ -301,6 +309,18 @@
 							{report.content || 'Ingen indhold tilgængeligt'}
 						</p>
 
+						{#if report.images && report.images.length > 0}
+							<div class="mt-4 grid grid-cols-3 gap-4">
+								{#each report.images as image}
+									<img
+										src={`data:image/*;base64,${image.image_data}`}
+										alt="Vedhæftet billede"
+										class="mt-4 max-w-full rounded-lg"
+									/>
+								{/each}
+							</div>
+						{/if}
+
 						<div class="flex justify-end items-center mt-4 gap-4">
 							<button
 								class="text-gray-600 hover:text-gray-800 focus:outline-none flex items-center"
@@ -367,6 +387,7 @@
 			: 'Rediger kommentarens indhold her...'}
 		onSave={handleEditSubmit}
 		onCancel={closeEditModal}
-		isOwner={isOwner}
+		{isOwner}
+		images={editingItem?.images || []}
 	/>
 </div>

@@ -32,15 +32,21 @@ export function generateStandardPDF(reports, reportType) {
 
 	let yPosition = 40;
 
-	// Beregn boksens højde inkl. kommentarer
+	// Beregn boksens højde inkl. kommentarer og billeder
 	const calculateBoxHeight = (doc, report, padding) => {
 		const splitContent = doc.splitTextToSize(report.content, pageWidth - 40);
 		const contentHeight = splitContent.length * 6;
+
+		const imagesHeight = (report.images || []).reduce((acc, image) => {
+			return acc + 30 + 5; // 30mm for billedets højde og 5mm mellemrum
+		}, 0);
+
 		const commentsHeight = (report.comments || []).reduce((acc, comment) => {
 			const splitComment = doc.splitTextToSize(comment.content, pageWidth - 60);
 			return acc + splitComment.length * 6 + 15; // 15 ekstra for navn, dato og mellemrum
 		}, 0);
-		return contentHeight + 3 * 8 + padding * 2 + commentsHeight;
+
+		return contentHeight + imagesHeight + commentsHeight + 3 * 8 + padding * 2;
 	};
 
 	reports.forEach((report) => {
@@ -79,6 +85,30 @@ export function generateStandardPDF(reports, reportType) {
 			doc.text(line, 12, yPosition);
 			yPosition += 6;
 		});
+
+		// **Tilføj alle billederne**
+		if (report.images && report.images.length > 0) {
+			report.images.forEach((image) => {
+				// Kontroller om der er plads til billedet, ellers tilføj en ny side
+				if (yPosition + 35 > pageHeight - 20) {
+					// 30mm for billede + 5mm mellemrum
+					doc.addPage();
+					yPosition = 20;
+				}
+
+				// Tilføj billedet
+				doc.addImage(
+					`data:image/jpeg;base64,${image.image_data}`, // Juster MIME-typen hvis nødvendigt
+					'JPEG',
+					12, // X-position
+					yPosition, // Y-position
+					50, // Bredde (juster efter behov)
+					30 // Højde (juster efter behov)
+				);
+
+				yPosition += 35; // Billedets højde + mellemrum
+			});
+		}
 
 		// Tilføj kommentarer
 		if (report.comments && report.comments.length > 0) {
