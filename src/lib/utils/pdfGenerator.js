@@ -86,27 +86,30 @@ export function generateStandardPDF(reports, reportType) {
 			yPosition += 6;
 		});
 
-		// **Tilføj alle billederne**
+		// Tilføj billeder med automatisk højde
 		if (report.images && report.images.length > 0) {
 			report.images.forEach((image) => {
-				// Kontroller om der er plads til billedet, ellers tilføj en ny side
-				if (yPosition + 35 > pageHeight - 20) {
-					// 30mm for billede + 5mm mellemrum
+				const boxWidth = pageWidth - 20; // Boksenes bredde (med margin)
+				const aspectRatio = 16 / 9; // Eksempel på standardforhold (juster, hvis nødvendigt)
+
+				// Hvis billedet ikke passer, opret en ny side
+				if (yPosition + boxWidth / aspectRatio > pageHeight - 20) {
 					doc.addPage();
 					yPosition = 20;
 				}
 
-				// Tilføj billedet
+				// Tilføj billedet med auto højde
 				doc.addImage(
-					`data:image/jpeg;base64,${image.image_data}`, // Juster MIME-typen hvis nødvendigt
-					'JPEG',
-					12, // X-position
+					`data:image/jpeg;base64,${image.image_data}`, // Base64-data
+					'JPEG', // Format (ændr til 'PNG', hvis nødvendigt)
+					10, // X-position (margin)
 					yPosition, // Y-position
-					50, // Bredde (juster efter behov)
-					30 // Højde (juster efter behov)
+					boxWidth, // Fuld bredde af boksen
+					0 // Højde som auto (jsPDF beregner den baseret på billedets dimensioner)
 				);
 
-				yPosition += 35; // Billedets højde + mellemrum
+				// Opdater yPosition for næste element
+				yPosition += boxWidth / aspectRatio + 10; // Tilføj billedehøjde + mellemrum
 			});
 		}
 
