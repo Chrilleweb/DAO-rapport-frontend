@@ -7,6 +7,7 @@
 	import EditModal from '$lib/components/ui/EditModal.svelte';
 	import { FontAwesomeIcon } from '@fortawesome/svelte-fontawesome';
 	import { faEdit } from '@fortawesome/free-solid-svg-icons';
+	import ImageModal from '$lib/components/ui/ImageModal.svelte';
 
 	let reportContent = '';
 	let scheduledDateTime = '';
@@ -25,6 +26,8 @@
 
 	let selectedReportTypeId = reportTypeOptions[0].id;
 
+	let images = []; // For storing images when creating a scheduled report
+
 	let scheduledReports = [];
 	let isEditing = false;
 	let editingType = ''; // 'report' eller 'comment'
@@ -39,17 +42,102 @@
 	let scheduleReportComments = writable({});
 	let newScheduleReportCommentContent = {};
 
+	// Image modal state
+	let showImageModal = false;
+	let currentImageSrc = '';
+
+	function openImageModal(imageSrc) {
+		showImageModal = true;
+		currentImageSrc = imageSrc;
+	}
+
+	function closeImageModal() {
+		showImageModal = false;
+		currentImageSrc = '';
+	}
+
+	function handleFileChange(event) {
+		const files = event.target.files;
+		if (files.length > 0) {
+			addFiles(files);
+		}
+	}
+
+	async function handlePaste(event) {
+		const clipboardItems = event.clipboardData.items;
+
+		for (const item of clipboardItems) {
+			if (item.type.startsWith('image/')) {
+				const file = item.getAsFile();
+				if (file) {
+					addFiles([file]);
+				}
+			}
+		}
+	}
+
+	async function addFiles(files) {
+		const maxSizeInBytes = 10 * 1024 * 1024; // 10MB
+		const allowedTypes = ['image/jpeg', 'image/png', 'image/gif'];
+		const filePromises = [];
+
+		for (let i = 0; i < files.length; i++) {
+			const file = files[i];
+
+			// Validate file size
+			if (file.size > maxSizeInBytes) {
+				alert(`Billedet ${file.name} er for stort. Maksimalt tilladt størrelse er 10MB.`);
+				continue;
+			}
+
+			// Validate file type
+			if (!allowedTypes.includes(file.type)) {
+				alert(`Kun JPG, PNG og GIF billeder er tilladt. Filen ${file.name} er ugyldig.`);
+				continue;
+			}
+
+			const filePromise = new Promise((resolve, reject) => {
+				const reader = new FileReader();
+				reader.onload = function (e) {
+					const base64Data = e.target.result.split(',')[1];
+					resolve(base64Data);
+				};
+				reader.onerror = function () {
+					reject(new Error(`Fejl ved læsning af fil: ${file.name}`));
+				};
+				reader.readAsDataURL(file);
+			});
+
+			filePromises.push(filePromise);
+		}
+
+		try {
+			const newImages = await Promise.all(filePromises);
+			images = [...images, ...newImages];
+		} catch (error) {
+			console.error(error);
+			alert('Der opstod en fejl under upload af billeder.');
+		}
+	}
+
+	function removeImage(index) {
+		images.splice(index, 1);
+		images = [...images];
+	}
+
 	function submitScheduledReport() {
 		socket.emit('schedule report', {
 			user_id: Number(user.id),
 			content: reportContent.trim(),
 			scheduled_time: scheduledDateTime,
-			report_type_id: selectedReportTypeId
+			report_type_id: selectedReportTypeId,
+			images
 		});
 
-		// Nulstil formularen
+		// Reset the form
 		reportContent = '';
 		scheduledDateTime = '';
+		images = [];
 	}
 
 	function openEditModal(item, type) {
@@ -66,7 +154,13 @@
 	}
 
 	function handleEditSubmit(updatedData) {
-		const { updatedContent, updatedReportTypeId } = updatedData;
+		const {
+			updatedContent,
+			updatedScheduledTime,
+			updatedReportTypeId,
+			imagesToAdd,
+			imagesToRemove
+		} = updatedData;
 
 		if (editingType === 'report') {
 			const payload = {
@@ -81,6 +175,15 @@
 					return;
 				}
 				payload.updatedContent = updatedContent.trim();
+				payload.updatedScheduledTime = updatedScheduledTime;
+
+				if (imagesToAdd && imagesToAdd.length > 0) {
+					payload.imagesToAdd = imagesToAdd;
+				}
+
+				if (imagesToRemove && imagesToRemove.length > 0) {
+					payload.imagesToRemove = imagesToRemove;
+				}
 			}
 
 			socket.emit('edit scheduled report', payload);
@@ -108,7 +211,7 @@
 			content
 		});
 
-		// Nulstil tekstfeltet
+		// Reset the textarea
 		newScheduleReportCommentContent[reportId] = '';
 	}
 
@@ -153,6 +256,8 @@
 		socket.on('update scheduled report', (updatedReport) => {
 			updatedReport = {
 				...updatedReport,
+				user_id: Number(updatedReport.user_id),
+				report_type_id: Number(updatedReport.report_type_id),
 				isScheduled: true
 			};
 			scheduledReports = scheduledReports.map((report) =>
@@ -164,7 +269,7 @@
 			alert(error.message);
 		});
 
-		// Kommentarer på planlagte rapporter
+		// Handle comments
 		socket.on('all schedule report comments', (comments) => {
 			scheduleReportComments.set(comments);
 		});
@@ -218,13 +323,13 @@
 	});
 </script>
 
-<div class="max-w-3xl mx-auto">
+<div class="max-w-3xl mx-auto" on:paste={handlePaste}>
 	<!-- Success Modal -->
 	<SuccessModal message={successMessage} show={showSuccessModal} />
 
 	<h2 class="text-4xl font-semibold text-center my-6">Planlæg en rapport</h2>
 
-	<!-- Formular til at planlægge en ny rapport -->
+	<!-- Form to schedule a new report -->
 	<form on:submit|preventDefault={submitScheduledReport}>
 		<div>
 			<label for="reportContent" class="sr-only">Rapportindhold</label>
@@ -237,8 +342,42 @@
 			></textarea>
 		</div>
 
+		<div class="mt-4">
+			<label for="image">Tilføj billeder (valgfrit)</label>
+			<input
+				type="file"
+				id="image"
+				on:change={handleFileChange}
+				accept="image/*"
+				multiple
+				class="w-full p-2 border border-gray-300 rounded-lg"
+			/>
+		</div>
+
+		{#if images.length > 0}
+			<div class="mt-4 grid grid-cols-3 gap-4">
+				{#each images as image, index}
+					<div class="relative">
+						<img
+							src={`data:image/*;base64,${image}`}
+							alt={`Billede ${index + 1}`}
+							class="w-full h-auto rounded-lg"
+						/>
+						<button
+							type="button"
+							class="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1"
+							on:click={() => removeImage(index)}
+							title="Fjern billede"
+						>
+							&times;
+						</button>
+					</div>
+				{/each}
+			</div>
+		{/if}
+
 		<div class="mb-4 grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-			<!-- Planlagt Dato og Tid -->
+			<!-- Scheduled Date and Time -->
 			<div>
 				<label for="scheduledDateTime" class="block text-gray-700 font-semibold mb-2">
 					Planlagt dato og tid:
@@ -252,7 +391,7 @@
 				/>
 			</div>
 
-			<!-- Vælg Rapporttype -->
+			<!-- Select Report Type -->
 			<div>
 				<label for="reportType" class="block text-gray-700 font-semibold mb-2">
 					Vælg rapporttype:
@@ -301,6 +440,30 @@
 							{report.content || 'Ingen indhold tilgængeligt'}
 						</p>
 
+						{#if report.images && report.images.length > 0}
+							<div class="mt-4 grid grid-cols-3 gap-4">
+								{#each report.images as image}
+									<button
+										class="p-0 border-none bg-transparent cursor-pointer"
+										on:click={() => openImageModal(`data:image/*;base64,${image.image_data}`)}
+										on:keydown={(event) => {
+											if (event.key === 'Enter' || event.key === ' ') {
+												openImageModal(`data:image/*;base64,${image.image_data}`);
+												event.preventDefault();
+											}
+										}}
+										aria-label="Vis billede i fuld størrelse"
+									>
+										<img
+											src={`data:image/*;base64,${image.image_data}`}
+											alt="Vedhæftet billede"
+											class="mt-4 max-w-full rounded-lg"
+										/>
+									</button>
+								{/each}
+							</div>
+						{/if}
+
 						<div class="flex justify-end items-center mt-4 gap-4">
 							<button
 								class="text-gray-600 hover:text-gray-800 focus:outline-none flex items-center"
@@ -311,7 +474,7 @@
 							</button>
 						</div>
 
-						<!-- Kommentarer -->
+						<!-- Comments -->
 						<div class="mt-4">
 							{#each $scheduleReportComments[report.id] || [] as comment}
 								<div class="comment bg-[#fff7ee] p-4 rounded-lg mt-2">
@@ -332,7 +495,7 @@
 								</div>
 							{/each}
 
-							<!-- Tilføj ny kommentar -->
+							<!-- Add new comment -->
 							<div class="mt-4">
 								<textarea
 									class="w-full p-2 border border-gray-300 rounded-lg"
@@ -355,7 +518,9 @@
 		{/if}
 	</div>
 
-	<!-- EditModal komponent til at redigere planlagte rapporter og kommentarer -->
+	<ImageModal show={showImageModal} imageSrc={currentImageSrc} onClose={closeImageModal} />
+
+	<!-- EditModal component for editing scheduled reports and comments -->
 	<EditModal
 		show={isEditing}
 		title={editingType === 'report' ? 'Rediger Planlagt Rapport' : 'Rediger Kommentar'}
@@ -369,6 +534,8 @@
 			: 'Rediger kommentarens indhold her...'}
 		onSave={handleEditSubmit}
 		onCancel={closeEditModal}
-    isOwner={isOwner}
+		isOwner={isOwner}
+		images={editingItem?.images || []}
+		{editingType}
 	/>
 </div>
