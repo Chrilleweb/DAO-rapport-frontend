@@ -9,6 +9,7 @@
 	import { processReportsWithAI } from '$lib/api/openai.js';
 	import { generateStandardPDF, generateAIPDF } from '$lib/utils/pdfGenerator.js';
 	import Loader from '../ui/Loader.svelte';
+	import ImageModal from '../ui/ImageModal.svelte';
 
 	export let reportTypeIds = [];
 	const reports = writable([]);
@@ -22,6 +23,19 @@
 	let editingType = ''; // 'report' eller 'comment'
 	let isLoading = false;
 	let isOwner = false;
+
+	let showImageModal = false; // Styrer om modal skal vises
+	let currentImageSrc = ''; // Kilde for det billede, der skal vises i modal
+
+	function openImageModal(imageSrc) {
+		showImageModal = true;
+		currentImageSrc = imageSrc;
+	}
+
+	function closeImageModal() {
+		showImageModal = false;
+		currentImageSrc = '';
+	}
 
 	let reportTypeOptions = [
 		{ label: 'Alle', id: 1 },
@@ -312,11 +326,23 @@
 						{#if report.images && report.images.length > 0}
 							<div class="mt-4 grid grid-cols-3 gap-4">
 								{#each report.images as image}
-									<img
-										src={`data:image/*;base64,${image.image_data}`}
-										alt="Vedhæftet billede"
-										class="mt-4 max-w-full rounded-lg"
-									/>
+									<button
+										class="p-0 border-none bg-transparent cursor-pointer"
+										on:click={() => openImageModal(`data:image/*;base64,${image.image_data}`)}
+										on:keydown={(event) => {
+											if (event.key === 'Enter' || event.key === ' ') {
+												openImageModal(`data:image/*;base64,${image.image_data}`);
+												event.preventDefault();
+											}
+										}}
+										aria-label="Vis billede i fuld størrelse"
+									>
+										<img
+											src={`data:image/*;base64,${image.image_data}`}
+											alt="Vedhæftet billede"
+											class="mt-4 max-w-full rounded-lg"
+										/>
+									</button>
 								{/each}
 							</div>
 						{/if}
@@ -374,6 +400,8 @@
 			<p class="text-center text-lg">Ingen rapporter tilgængelige</p>
 		{/if}
 	</div>
+
+	<ImageModal show={showImageModal} imageSrc={currentImageSrc} onClose={closeImageModal} />
 
 	<!-- Brug af EditModal til både rapporter og kommentarer -->
 	<EditModal
