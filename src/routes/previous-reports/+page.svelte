@@ -1,5 +1,6 @@
 <script>
 	import EditModal from '$lib/components/ui/EditModal.svelte';
+	import ImageModal from '$lib/components/ui/ImageModal.svelte';
 	import { onMount, onDestroy } from 'svelte';
 	import { FontAwesomeIcon } from '@fortawesome/svelte-fontawesome';
 	import { faEdit } from '@fortawesome/free-solid-svg-icons';
@@ -21,6 +22,21 @@
 	let editingType = ''; // 'report' eller 'comment'
 	let isLoading = false;
 	let isOwner = false;
+
+	// Variabler til ImageModal
+	let showImageModal = false;
+	let currentImageSrc = '';
+
+	// Funktioner til ImageModal
+	function openImageModal(imageSrc) {
+		showImageModal = true;
+		currentImageSrc = imageSrc;
+	}
+
+	function closeImageModal() {
+		showImageModal = false;
+		currentImageSrc = '';
+	}
 
 	let reportTypeOptionsDisplay = [
 		{ label: 'Alle', ids: [1, 2, 3, 4, 5] },
@@ -85,7 +101,7 @@
 	}
 
 	function handleEditSubmit(updatedData) {
-		const { updatedContent, updatedReportTypeId } = updatedData;
+		const { updatedContent, updatedReportTypeId, imagesToAdd, imagesToRemove } = updatedData;
 
 		if (editingType === 'report') {
 			const payload = {
@@ -100,6 +116,14 @@
 					return;
 				}
 				payload.updatedContent = updatedContent.trim();
+			}
+
+			if (isOwner && imagesToAdd && imagesToAdd.length > 0) {
+				payload.imagesToAdd = imagesToAdd;
+			}
+
+			if (isOwner && imagesToRemove && imagesToRemove.length > 0) {
+				payload.imagesToRemove = imagesToRemove;
 			}
 
 			socket.emit('edit report', payload);
@@ -405,6 +429,30 @@
 							{report.content || 'Ingen indhold tilgængeligt'}
 						</p>
 
+						{#if report.images && report.images.length > 0}
+							<div class="mt-4 grid grid-cols-3 gap-4">
+								{#each report.images as image}
+									<button
+										class="p-0 border-none bg-transparent cursor-pointer"
+										on:click={() => openImageModal(`data:image/*;base64,${image.image_data}`)}
+										on:keydown={(event) => {
+											if (event.key === 'Enter' || event.key === ' ') {
+												openImageModal(`data:image/*;base64,${image.image_data}`);
+												event.preventDefault();
+											}
+										}}
+										aria-label="Vis billede i fuld størrelse"
+									>
+										<img
+											src={`data:image/*;base64,${image.image_data}`}
+											alt="Vedhæftet billede"
+											class="mt-4 max-w-full rounded-lg"
+										/>
+									</button>
+								{/each}
+							</div>
+						{/if}
+
 						<div class="flex justify-end items-center mt-4 gap-4">
 							<button
 								class="text-gray-600 hover:text-gray-800 focus:outline-none flex items-center"
@@ -459,6 +507,9 @@
 		{/if}
 	</div>
 
+	<!-- ImageModal komponent -->
+	<ImageModal show={showImageModal} imageSrc={currentImageSrc} onClose={closeImageModal} />
+
 	<!-- Brug af EditModal til både rapporter og kommentarer -->
 	<EditModal
 		show={isEditing}
@@ -471,6 +522,7 @@
 			: 'Rediger kommentarens indhold her...'}
 		onSave={handleEditSubmit}
 		onCancel={closeEditModal}
-        isOwner={isOwner}
+		isOwner={isOwner}
+		images={editingItem?.images || []}
 	/>
 </div>
