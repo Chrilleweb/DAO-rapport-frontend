@@ -347,6 +347,7 @@
 				...scheduledReports
 			];
 
+			showSuccessModal = false; // vi sætter den til false igen, for at sikre at modalen vises igen
 			successMessage = `Din rapport er blevet planlagt til ${newReport.scheduled_time}`;
 			showSuccessModal = true;
 		});
