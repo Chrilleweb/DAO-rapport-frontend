@@ -303,6 +303,16 @@
 		newScheduleReportCommentImages[reportId] = [];
 	}
 
+	function handleDeleteScheduledReport() {
+    if (editingType === 'report' && editingItem.isScheduled) {
+      socket.emit('delete scheduled report', {
+        reportId: editingItem.id,
+        userId: Number(user.id)
+      });
+      closeEditModal();
+    }
+  }
+
 	onMount(() => {
 		function requestScheduledReports() {
 			socket.emit('get scheduled reports');
@@ -356,6 +366,14 @@
 		socket.on('edit scheduled report error', (error) => {
 			alert(error.message);
 		});
+
+		socket.on('delete scheduled report success', ({ reportId }) => {
+      scheduledReports = scheduledReports.filter(report => report.id !== reportId);
+    });
+
+    socket.on('delete scheduled report error', (error) => {
+      alert(error.message);
+    });
 
 		// Handle comments
 		socket.on('all schedule report comments', (comments) => {
@@ -688,5 +706,6 @@
 		isOwner={isOwner}
 		images={editingItem?.images || []}
 		{editingType}
+		onDelete={handleDeleteScheduledReport}
 	/>
 </div>

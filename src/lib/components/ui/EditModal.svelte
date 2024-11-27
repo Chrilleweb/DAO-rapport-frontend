@@ -1,4 +1,5 @@
 <script>
+	import ConfirmationModal from './ConfirmationModal.svelte';
 	export let show = false;
 	export let title = '';
 	export let content = '';
@@ -12,6 +13,7 @@
 	export let isOwner = false;
 	export let images = [];
 	export let editingType = '';
+	export let onDelete = () => {};
 
 	let updatedContent = '';
 	let updatedScheduledTime = '';
@@ -20,6 +22,8 @@
 	let imagesToAdd = [];
 	let imagesToRemove = [];
 	let existingImages = [];
+
+	let showConfirmDelete = false;
 
 	let initialized = false;
 
@@ -126,6 +130,19 @@
 	function removeNewImage(index) {
 		imagesToAdd.splice(index, 1);
 		imagesToAdd = imagesToAdd.slice(); // Reassign for at trigge reaktivitet
+	}
+
+	function handleDelete() {
+		showConfirmDelete = true;
+	}
+
+	function confirmDelete() {
+		showConfirmDelete = false;
+		onDelete();
+	}
+
+	function cancelDelete() {
+		showConfirmDelete = false;
 	}
 </script>
 
@@ -240,19 +257,43 @@
 					</select>
 				{/if}
 
-				<div class="flex justify-end p-4 space-x-4">
-					<button
-						type="button"
-						class="px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400"
-						on:click={onCancel}
-					>
-						Annuller
-					</button>
-					<button type="submit" class="px-4 py-2 bg-HeaderBg text-white rounded hover:bg-toggleBg">
-						Gem
-					</button>
+				<div class="flex justify-between pt-12">
+					<!-- Slet-knap -->
+					{#if editingType === 'report' && isScheduledReport && isOwner}
+						<button
+							type="button"
+							class="px-4 py-2 bg-HeaderBg text-white rounded hover:bg-toggleBg"
+							on:click={handleDelete}
+						>
+							Slet
+						</button>
+					{/if}
+
+					<!-- Annuller og Gem knap-->
+					<div class="flex space-x-4">
+						<button
+							type="button"
+							class="px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400"
+							on:click={onCancel}
+						>
+							Annuller
+						</button>
+						<button
+							type="submit"
+							class="px-4 py-2 bg-HeaderBg text-white rounded hover:bg-toggleBg"
+						>
+							Gem
+						</button>
+					</div>
 				</div>
 			</form>
 		</div>
+		<ConfirmationModal
+			show={showConfirmDelete}
+			title="Bekræft sletning"
+			message="Er du sikker på, at du vil slette denne rapport?"
+			onConfirm={confirmDelete}
+			onCancel={cancelDelete}
+		/>
 	</div>
 {/if}
