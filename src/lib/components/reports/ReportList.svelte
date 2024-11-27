@@ -10,6 +10,7 @@
 	import { generateStandardPDF, generateAIPDF } from '$lib/utils/pdfGenerator.js';
 	import Loader from '../ui/Loader.svelte';
 	import ImageModal from '../ui/ImageModal.svelte';
+	import ErrorModal from '../ui/ErrorModal.svelte';
 
 	export let reportTypeIds = [];
 	const reports = writable([]);
@@ -27,6 +28,10 @@
 
 	let showImageModal = false; // Styrer om modal skal vises
 	let currentImageSrc = ''; // Kilde for det billede, der skal vises i modal
+
+	// ErrorModal state
+	let errorMessage = '';
+    let showErrorModal = false;
 
 	function openImageModal(imageSrc) {
 		showImageModal = true;
@@ -114,7 +119,9 @@
 		const content = newCommentContent[reportId]?.trim();
 		const images = newCommentImages[reportId] || [];
 		if (!content && images.length === 0) {
-			alert('Kommentaren kan ikke være tom.');
+			showErrorModal = false;
+			errorMessage = 'Kommentaren kan ikke være tom.';
+            showErrorModal = true;
 			return;
 		}
 
@@ -369,9 +376,14 @@
 </script>
 
 <div class="max-w-3xl mx-auto mt-6 mb-10">
+
 	{#if isLoading}
 		<Loader />
 	{/if}
+
+	<!-- ErrorModal -->
+	<ErrorModal message={errorMessage} show={showErrorModal} />
+
 	<div class="flex justify-between items-center mb-4">
 		<p class="text-2xl font-bold text-gray-800 tracking-wide">Rapporter</p>
 		<div class="flex space-x-4">
