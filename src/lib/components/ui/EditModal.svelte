@@ -140,7 +140,7 @@
 				<h2 class="text-2xl font-semibold mb-4 text-center">{title}</h2>
 
 				{#if isOwner}
-					<!-- Rapportens Indhold -->
+					<!-- Indhold -->
 					<textarea
 						class="w-full h-40 p-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2"
 						{placeholder}
@@ -149,7 +149,7 @@
 						on:paste={handlePaste}
 					></textarea>
 
-					{#if editingType === 'report'}
+					<!-- Filinput til billeder -->
 					<div class="mt-4">
 						<label for="image">Tilføj billeder (valgfrit)</label>
 						<input
@@ -209,22 +209,21 @@
 					{/if}
 				{/if}
 
-					{#if isScheduledReport}
-						<!-- Planlagt Dato og Tid -->
-						<label for="scheduledTime" class="block mt-4 text-gray-700 font-semibold mb-2">
-							Planlagt dato og tid:
-						</label>
-						<input
-							id="scheduledTime"
-							type="datetime-local"
-							bind:value={updatedScheduledTime}
-							class="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2"
-							required
-						/>
-					{/if}
+				{#if isScheduledReport}
+					<!-- Planlagt Dato og Tid -->
+					<label for="scheduledTime" class="block mt-4 text-gray-700 font-semibold mb-2">
+						Planlagt dato og tid:
+					</label>
+					<input
+						id="scheduledTime"
+						type="datetime-local"
+						bind:value={updatedScheduledTime}
+						class="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2"
+						required
+					/>
 				{/if}
 
-				{#if title.includes('Rapport')}
+				{#if editingType === 'report' && title.includes('Rapport')}
 					<!-- Vælg Rapporttype -->
 					<label for="reportType" class="block mt-4 text-gray-700 font-semibold mb-2">
 						Vælg rapporttype:

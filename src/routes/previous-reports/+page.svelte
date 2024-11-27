@@ -14,6 +14,7 @@
 	const reports = writable([]);
 	const comments = writable({});
 	let newCommentContent = {};
+	let newCommentImages = {}; // Tilføjet til at håndtere billeder i nye kommentarer
 
 	$: user = $page.data.user;
 
@@ -100,7 +101,7 @@
 		editingType = '';
 	}
 
-	function handleEditSubmit(updatedData) {
+	async function handleEditSubmit(updatedData) {
 		const { updatedContent, updatedReportTypeId, imagesToAdd, imagesToRemove } = updatedData;
 
 		if (editingType === 'report') {
@@ -128,19 +129,30 @@
 
 			socket.emit('edit report', payload);
 		} else if (editingType === 'comment') {
-			socket.emit('edit comment', {
+			const payload = {
 				commentId: editingItem.id,
 				userId: Number(user.id),
 				updatedContent: updatedContent.trim(),
 				report_id: editingItem.report_id
-			});
+			};
+
+			if (isOwner && imagesToAdd && imagesToAdd.length > 0) {
+				payload.imagesToAdd = imagesToAdd;
+			}
+
+			if (isOwner && imagesToRemove && imagesToRemove.length > 0) {
+				payload.imagesToRemove = imagesToRemove;
+			}
+
+			socket.emit('edit comment', payload);
 		}
 		closeEditModal();
 	}
 
 	function submitNewComment(reportId) {
 		const content = newCommentContent[reportId]?.trim();
-		if (!content) {
+		const images = newCommentImages[reportId] || [];
+		if (!content && images.length === 0) {
 			alert('Kommentaren kan ikke være tom.');
 			return;
 		}
@@ -148,10 +160,81 @@
 		socket.emit('new comment', {
 			report_id: reportId,
 			user_id: Number(user.id),
-			content
+			content,
+			images
 		});
 
 		newCommentContent[reportId] = '';
+		newCommentImages[reportId] = [];
+	}
+
+	function handleCommentFileChange(event, reportId) {
+		const files = event.target.files;
+		if (files.length > 0) {
+			addCommentFiles(files, reportId);
+		}
+	}
+
+	async function handleCommentPaste(event, reportId) {
+		const clipboardItems = event.clipboardData.items;
+
+		for (const item of clipboardItems) {
+			if (item.type.startsWith('image/')) {
+				const file = item.getAsFile();
+				if (file) {
+					await addCommentFiles([file], reportId);
+				}
+			}
+		}
+	}
+
+	async function addCommentFiles(files, reportId) {
+		const maxSizeInBytes = 10 * 1024 * 1024; // 10MB
+		const allowedTypes = ['image/jpeg', 'image/png', 'image/gif'];
+		const filePromises = [];
+
+		for (let i = 0; i < files.length; i++) {
+			const file = files[i];
+
+			// Valider filstørrelse
+			if (file.size > maxSizeInBytes) {
+				alert(`Billedet ${file.name} er for stort. Maksimalt tilladt størrelse er 10MB.`);
+				continue;
+			}
+
+			// Valider filtype
+			if (!allowedTypes.includes(file.type)) {
+				alert(`Kun JPG, PNG og GIF billeder er tilladt. Filen ${file.name} er ugyldig.`);
+				continue;
+			}
+
+			const filePromise = new Promise((resolve, reject) => {
+				const reader = new FileReader();
+				reader.onload = function (e) {
+					const base64Data = e.target.result.split(',')[1];
+					resolve(base64Data);
+				};
+				reader.onerror = function () {
+					reject(new Error(`Fejl ved læsning af fil: ${file.name}`));
+				};
+				reader.readAsDataURL(file);
+			});
+
+			filePromises.push(filePromise);
+		}
+
+		try {
+			const newImages = await Promise.all(filePromises);
+			newCommentImages[reportId] = [...(newCommentImages[reportId] || []), ...newImages];
+		} catch (error) {
+			console.error(error);
+			alert('Der opstod en fejl under upload af billeder.');
+		}
+	}
+
+	function removeCommentImage(reportId, index) {
+		newCommentImages[reportId].splice(index, 1);
+		newCommentImages = { ...newCommentImages };
 	}
 
 	function requestReports() {
@@ -294,7 +377,11 @@
 	});
 
 	function downloadPDF() {
-		const reportsData = $reports;
+		const reportsData = $reports.map((report) => ({
+			...report,
+			comments: $comments[report.id] || []
+		}));
+
 		if (reportsData.length > 0) {
 			const uniqueReportTypes = [...new Set(reportsData.map((report) => report.report_type))];
 			const reportType = uniqueReportTypes.length > 1 ? 'Samlet' : uniqueReportTypes[0];
@@ -472,6 +559,31 @@
 										<p class="text-sm text-gray-600">{comment.created_at}</p>
 									</div>
 									<p class="mt-2">{comment.content}</p>
+
+									{#if comment.images && comment.images.length > 0}
+										<div class="mt-4 grid grid-cols-3 gap-4">
+											{#each comment.images as image}
+												<button
+													class="p-0 border-none bg-transparent cursor-pointer"
+													on:click={() => openImageModal(`data:image/*;base64,${image.image_data}`)}
+													on:keydown={(event) => {
+														if (event.key === 'Enter' || event.key === ' ') {
+															openImageModal(`data:image/*;base64,${image.image_data}`);
+															event.preventDefault();
+														}
+													}}
+													aria-label="Vis billede i fuld størrelse"
+												>
+													<img
+														src={`data:image/*;base64,${image.image_data}`}
+														alt="Vedhæftet billede"
+														class="mt-4 max-w-full rounded-lg"
+													/>
+												</button>
+											{/each}
+										</div>
+									{/if}
+
 									{#if comment.user_id === Number(user.id)}
 										<button
 											class="text-blue-500 hover:underline text-sm mt-2"
@@ -490,7 +602,45 @@
 									class="w-full p-2 border border-gray-300 rounded-lg"
 									bind:value={newCommentContent[report.id]}
 									placeholder="Skriv en kommentar..."
+									on:paste={(e) => handleCommentPaste(e, report.id)}
 								></textarea>
+
+								<!-- Filinput til billeder -->
+								<div class="mt-2">
+									<label for={`comment-image-${report.id}`}>Tilføj billeder (valgfrit)</label>
+									<input
+										type="file"
+										id={`comment-image-${report.id}`}
+										on:change={(e) => handleCommentFileChange(e, report.id)}
+										accept="image/*"
+										multiple
+										class="w-full p-2 border border-gray-300 rounded-lg"
+									/>
+								</div>
+
+								<!-- Forhåndsvisning af billeder -->
+								{#if newCommentImages[report.id]?.length > 0}
+									<div class="mt-4 grid grid-cols-3 gap-4">
+										{#each newCommentImages[report.id] as image, index}
+											<div class="relative">
+												<img
+													src={`data:image/*;base64,${image.image_data || image}`}
+													alt={`Billede ${index + 1}`}
+													class="w-full h-auto rounded-lg"
+												/>
+												<button
+													type="button"
+													class="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1"
+													on:click={() => removeCommentImage(report.id, index)}
+													title="Fjern billede"
+												>
+													&times;
+												</button>
+											</div>
+										{/each}
+									</div>
+								{/if}
+
 								<button
 									class="mt-2 px-4 py-2 bg-costumRed text-white rounded-lg hover:bg-costumRedHover"
 									on:click={() => submitNewComment(report.id)}
@@ -524,5 +674,6 @@
 		onCancel={closeEditModal}
 		isOwner={isOwner}
 		images={editingItem?.images || []}
+		{editingType}
 	/>
 </div>
