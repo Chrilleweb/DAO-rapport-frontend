@@ -1,6 +1,7 @@
 <script>
 	import { writable } from 'svelte/store';
 	import SuccessModal from '$lib/components/ui/SuccessModal.svelte';
+	import ErrorModal from '$lib/components/ui/ErrorModal.svelte';
 	import { page } from '$app/stores';
 	import socket from '$lib/socket';
 	import { onMount, onDestroy } from 'svelte';
@@ -37,6 +38,10 @@
 	// SuccessModal state
 	let successMessage = '';
 	let showSuccessModal = false;
+
+	// ErrorModal state
+	let errorMessage = '';
+    let showErrorModal = false;
 
 	// Kommentarer for planlagte rapporter som en writable store
 	let scheduleReportComments = writable({});
@@ -287,7 +292,9 @@
 		const content = newScheduleReportCommentContent[reportId]?.trim();
 		const images = newScheduleReportCommentImages[reportId] || [];
 		if (!content && images.length === 0) {
-			alert('Kommentaren kan ikke være tom.');
+			showErrorModal = false;
+			errorMessage = 'Kommentaren kan ikke være tom.';
+            showErrorModal = true;
 			return;
 		}
 
@@ -433,6 +440,9 @@
 <div class="max-w-3xl mx-auto" on:paste={handlePaste}>
 	<!-- Success Modal -->
 	<SuccessModal message={successMessage} show={showSuccessModal} />
+
+	<!-- Error Modal -->
+	<ErrorModal message={errorMessage} show={showErrorModal} />
 
 	<h2 class="text-4xl font-semibold text-center my-6">Planlæg en rapport</h2>
 
