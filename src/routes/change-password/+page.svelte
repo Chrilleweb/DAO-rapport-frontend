@@ -30,7 +30,9 @@
 
         <div class="h-6">
             {#if message}
-                <p class="text-red-500 text-center mb-4">{message}</p>
+                <p class="text-center mb-4 {message === 'Password changed successfully!'
+                ? 'text-green-500' 
+                : 'text-red-500'}">{message}</p>
             {/if}
         </div>
 
