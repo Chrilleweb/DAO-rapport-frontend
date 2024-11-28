@@ -10,6 +10,7 @@
 	import { processReportsWithAIDate } from '$lib/api/openai.js';
 	import { generateStandardPDF, generateAIPDF } from '$lib/utils/pdfGenerator.js';
 	import Loader from '$lib/components/ui/Loader.svelte';
+	import ErrorModal from '$lib/components/ui/ErrorModal.svelte';
 
 	const reports = writable([]);
 	const comments = writable({});
@@ -27,6 +28,10 @@
 	// Variabler til ImageModal
 	let showImageModal = false;
 	let currentImageSrc = '';
+
+	// ErrorModal state
+	let errorMessage = '';
+    let showErrorModal = false;
 
 	// Funktioner til ImageModal
 	function openImageModal(imageSrc) {
@@ -153,7 +158,9 @@
 		const content = newCommentContent[reportId]?.trim();
 		const images = newCommentImages[reportId] || [];
 		if (!content && images.length === 0) {
-			alert('Kommentaren kan ikke være tom.');
+			showErrorModal = false;
+			errorMessage = 'Kommentaren kan ikke være tom.';
+            showErrorModal = true;
 			return;
 		}
 
@@ -435,9 +442,14 @@
 </script>
 
 <div class="max-w-3xl mx-auto mt-6 mb-10">
+
 	{#if isLoading}
 		<Loader />
 	{/if}
+
+	<!-- Error Modal -->
+	<ErrorModal message={errorMessage} show={showErrorModal} />
+
 	<h2 class="text-4xl font-semibold text-center my-6">Tidligere rapporter</h2>
 
 	<!-- Rapporttype Vælger -->
