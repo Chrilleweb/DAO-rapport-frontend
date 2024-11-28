@@ -31,7 +31,7 @@
 
 	// ErrorModal state
 	let errorMessage = '';
-    let showErrorModal = false;
+	let showErrorModal = false;
 
 	// Funktioner til ImageModal
 	function openImageModal(imageSrc) {
@@ -160,7 +160,7 @@
 		if (!content && images.length === 0) {
 			showErrorModal = false;
 			errorMessage = 'Kommentaren kan ikke være tom.';
-            showErrorModal = true;
+			showErrorModal = true;
 			return;
 		}
 
@@ -272,6 +272,22 @@
 		socket.emit('get all comments');
 	}
 
+	function handlePreviousDelete() {
+		if (editingType === 'report') {
+			socket.emit('delete report', {
+				reportId: editingItem.id,
+				userId: Number(user.id)
+			});
+			closeEditModal();
+		} else if (editingType === 'comment') {
+			socket.emit('delete report comment', {
+				commentId: editingItem.id,
+				userId: Number(user.id)
+			});
+			closeEditModal();
+		}
+	}
+
 	onMount(() => {
 		if (socket.connected) {
 			requestReports();
@@ -326,6 +342,27 @@
 			comments.set(groupedComments);
 		});
 
+		socket.on('delete report success', ({ reportId }) => {
+			reports.update((currentReports) => currentReports.filter((report) => report.id !== reportId));
+		});
+
+		socket.on('delete report error', (error) => {
+			alert(error.message);
+		});
+
+		socket.on('delete comment success', ({ commentId, report_id }) => {
+			comments.update((currentComments) => {
+				const updatedComments = (currentComments[report_id] || []).filter(
+					(comment) => comment.id !== commentId
+				);
+				return { ...currentComments, [report_id]: updatedComments };
+			});
+		});
+
+		socket.on('delete comment error', (error) => {
+			alert(error.message);
+		});
+
 		socket.on('new comment', (newComment) => {
 			comments.update((currentComments) => {
 				const reportId = newComment.report_id;
@@ -364,6 +401,10 @@
 			socket.off('update report');
 			socket.off('edit error');
 			socket.off('all comments');
+			socket.off('delete report success');
+			socket.off('delete report error');
+			socket.off('delete comment success');
+			socket.off('delete comment error');
 			socket.off('new comment');
 			socket.off('update comment');
 			socket.off('edit comment error');
@@ -377,6 +418,10 @@
 			socket.off('previous reports');
 			socket.off('update report');
 			socket.off('edit error');
+			socket.off('delete report success');
+			socket.off('delete report error');
+			socket.off('delete comment success');
+			socket.off('delete comment error');
 			socket.off('new comment');
 			socket.off('update comment');
 			socket.off('edit comment error');
@@ -684,8 +729,9 @@
 			: 'Rediger kommentarens indhold her...'}
 		onSave={handleEditSubmit}
 		onCancel={closeEditModal}
-		isOwner={isOwner}
+		{isOwner}
 		images={editingItem?.images || []}
 		{editingType}
+		onDelete={handlePreviousDelete}
 	/>
 </div>

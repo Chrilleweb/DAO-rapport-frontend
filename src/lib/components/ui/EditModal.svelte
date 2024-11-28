@@ -259,7 +259,7 @@
 
 				<div class="flex justify-between pt-12">
 					<!-- Slet-knap -->
-					{#if editingType === 'report' && isScheduledReport && isOwner}
+					{#if isOwner}
 						<button
 							type="button"
 							class="px-4 py-2 bg-HeaderBg text-white rounded hover:bg-toggleBg"

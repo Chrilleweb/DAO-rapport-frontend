@@ -41,7 +41,7 @@
 
 	// ErrorModal state
 	let errorMessage = '';
-    let showErrorModal = false;
+	let showErrorModal = false;
 
 	// Kommentarer for planlagte rapporter som en writable store
 	let scheduleReportComments = writable({});
@@ -294,7 +294,7 @@
 		if (!content && images.length === 0) {
 			showErrorModal = false;
 			errorMessage = 'Kommentaren kan ikke være tom.';
-            showErrorModal = true;
+			showErrorModal = true;
 			return;
 		}
 
@@ -311,14 +311,20 @@
 	}
 
 	function handleDeleteScheduledReport() {
-    if (editingType === 'report' && editingItem.isScheduled) {
-      socket.emit('delete scheduled report', {
-        reportId: editingItem.id,
-        userId: Number(user.id)
-      });
-      closeEditModal();
-    }
-  }
+		if (editingType === 'report' && editingItem.isScheduled) {
+			socket.emit('delete scheduled report', {
+				reportId: editingItem.id,
+				userId: Number(user.id)
+			});
+			closeEditModal();
+		} else if (editingType === 'comment') {
+			socket.emit('delete scheduled report comment', {
+				commentId: editingItem.id,
+				userId: Number(user.id)
+			});
+			closeEditModal();
+		}
+	}
 
 	onMount(() => {
 		function requestScheduledReports() {
@@ -376,12 +382,25 @@
 		});
 
 		socket.on('delete scheduled report success', ({ reportId }) => {
-      scheduledReports = scheduledReports.filter(report => report.id !== reportId);
-    });
+			scheduledReports = scheduledReports.filter((report) => report.id !== reportId);
+		});
 
-    socket.on('delete scheduled report error', (error) => {
-      alert(error.message);
-    });
+		socket.on('delete scheduled report error', (error) => {
+			alert(error.message);
+		});
+
+		socket.on('delete scheduled report comment success', ({ commentId, schedule_report_id }) => {
+			scheduleReportComments.update((current) => {
+				const updatedComments = (current[schedule_report_id] || []).filter(
+					(comment) => comment.id !== commentId
+				);
+				return { ...current, [schedule_report_id]: updatedComments };
+			});
+		});
+
+		socket.on('delete scheduled report comment error', (error) => {
+			alert(error.message);
+		});
 
 		// Handle comments
 		socket.on('all schedule report comments', (comments) => {
@@ -417,6 +436,10 @@
 			socket.off('new scheduled report');
 			socket.off('update scheduled report');
 			socket.off('edit scheduled report error');
+			socket.off('delete scheduled report success');
+			socket.off('delete scheduled report error');
+			socket.off('delete scheduled report comment success');
+			socket.off('delete scheduled report comment error');
 			socket.off('all schedule report comments');
 			socket.off('new schedule report comment');
 			socket.off('update schedule report comment');
@@ -429,6 +452,10 @@
 		socket.off('scheduled reports');
 		socket.off('new scheduled report');
 		socket.off('update scheduled report');
+		socket.off('delete scheduled report success');
+		socket.off('delete scheduled report error');
+		socket.off('delete scheduled report comment success');
+		socket.off('delete scheduled report comment error');
 		socket.off('edit scheduled report error');
 		socket.off('all schedule report comments');
 		socket.off('new schedule report comment');
@@ -714,7 +741,7 @@
 			: 'Rediger kommentarens indhold her...'}
 		onSave={handleEditSubmit}
 		onCancel={closeEditModal}
-		isOwner={isOwner}
+		{isOwner}
 		images={editingItem?.images || []}
 		{editingType}
 		onDelete={handleDeleteScheduledReport}
