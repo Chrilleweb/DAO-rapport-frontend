@@ -9,9 +9,12 @@
 	import { FontAwesomeIcon } from '@fortawesome/svelte-fontawesome';
 	import { faEdit } from '@fortawesome/free-solid-svg-icons';
 	import ImageModal from '$lib/components/ui/ImageModal.svelte';
+	import Spinner from '$lib/components/ui/Spinner.svelte';
 
 	let reportContent = '';
 	let scheduledDateTime = '';
+	let isDataLoaded = false;
+
 	$: user = $page.data.user;
 
 	let reportTypeOptions = [
@@ -327,6 +330,7 @@
 	}
 
 	onMount(() => {
+		isDataLoaded = false;
 		function requestScheduledReports() {
 			socket.emit('get scheduled reports');
 			socket.emit('get all schedule report comments');
@@ -347,6 +351,7 @@
 				report_type_id: Number(report.report_type_id),
 				isScheduled: true
 			}));
+			isDataLoaded = true;
 		});
 
 		socket.on('new scheduled report', (newReport) => {
@@ -565,165 +570,172 @@
 
 	<h2 class="text-2xl font-semibold mb-4">Planlagte Rapporter</h2>
 
-	<div class="report-list overflow-y-auto h-96">
-		{#if scheduledReports.length > 0}
-			<ul>
-				{#each scheduledReports as report}
-					<li class="bg-[#ECE0D1] py-6 px-6 rounded-lg shadow-md mb-4 flex flex-col">
-						<div class="flex justify-between items-center mb-4">
-							<div class="text-gray-600 text-base flex gap-3">
-								<p>{report.firstname} {report.lastname}</p>
-								<p>{report.scheduled_time}</p>
+	{#if !isDataLoaded}
+		<div class="flex items-center justify-center h-96">
+			<Spinner />
+		</div>
+	{:else}
+		<div class="report-list overflow-y-auto h-96">
+			{#if scheduledReports.length > 0}
+				<ul>
+					{#each scheduledReports as report}
+						<li class="bg-[#ECE0D1] py-6 px-6 rounded-lg shadow-md mb-4 flex flex-col">
+							<div class="flex justify-between items-center mb-4">
+								<div class="text-gray-600 text-base flex gap-3">
+									<p>{report.firstname} {report.lastname}</p>
+									<p>{report.scheduled_time}</p>
+								</div>
+								<div class="text-gray-600 text-base">
+									<p>{report.report_type}</p>
+								</div>
 							</div>
-							<div class="text-gray-600 text-base">
-								<p>{report.report_type}</p>
+
+							<p class="text-gray-800 whitespace-pre-wrap text-lg flex-grow">
+								{report.content || 'Ingen indhold tilgængeligt'}
+							</p>
+
+							{#if report.images && report.images.length > 0}
+								<div class="mt-4 grid grid-cols-3 gap-4">
+									{#each report.images as image}
+										<button
+											class="p-0 border-none bg-transparent cursor-pointer"
+											on:click={() => openImageModal(`data:image/*;base64,${image.image_data}`)}
+											on:keydown={(event) => {
+												if (event.key === 'Enter' || event.key === ' ') {
+													openImageModal(`data:image/*;base64,${image.image_data}`);
+													event.preventDefault();
+												}
+											}}
+											aria-label="Vis billede i fuld størrelse"
+										>
+											<img
+												src={`data:image/*;base64,${image.image_data}`}
+												alt="Vedhæftet billede"
+												class="mt-4 max-w-full rounded-lg"
+											/>
+										</button>
+									{/each}
+								</div>
+							{/if}
+
+							<div class="flex justify-end items-center mt-4 gap-4">
+								<button
+									class="text-gray-600 hover:text-gray-800 focus:outline-none flex items-center"
+									on:click={() => openEditModal(report, 'report')}
+								>
+									<FontAwesomeIcon icon={faEdit} class="h-6 w-6 mr-2" />
+									Rediger
+								</button>
 							</div>
-						</div>
 
-						<p class="text-gray-800 whitespace-pre-wrap text-lg flex-grow">
-							{report.content || 'Ingen indhold tilgængeligt'}
-						</p>
+							<!-- Comments -->
+							<div class="mt-4">
+								{#each $scheduleReportComments[report.id] || [] as comment}
+									<div class="comment bg-[#fff7ee] p-4 rounded-lg mt-2">
+										<div class="flex justify-between">
+											<p class="font-semibold">{comment.firstname} {comment.lastname}</p>
+											<p class="text-sm text-gray-600">{comment.created_at}</p>
+										</div>
+										<p class="mt-2">{comment.content}</p>
 
-						{#if report.images && report.images.length > 0}
-							<div class="mt-4 grid grid-cols-3 gap-4">
-								{#each report.images as image}
-									<button
-										class="p-0 border-none bg-transparent cursor-pointer"
-										on:click={() => openImageModal(`data:image/*;base64,${image.image_data}`)}
-										on:keydown={(event) => {
-											if (event.key === 'Enter' || event.key === ' ') {
-												openImageModal(`data:image/*;base64,${image.image_data}`);
-												event.preventDefault();
-											}
-										}}
-										aria-label="Vis billede i fuld størrelse"
-									>
-										<img
-											src={`data:image/*;base64,${image.image_data}`}
-											alt="Vedhæftet billede"
-											class="mt-4 max-w-full rounded-lg"
-										/>
-									</button>
-								{/each}
-							</div>
-						{/if}
+										{#if comment.images && comment.images.length > 0}
+											<div class="mt-4 grid grid-cols-3 gap-4">
+												{#each comment.images as image}
+													<button
+														class="p-0 border-none bg-transparent cursor-pointer"
+														on:click={() =>
+															openImageModal(`data:image/*;base64,${image.image_data}`)}
+														on:keydown={(event) => {
+															if (event.key === 'Enter' || event.key === ' ') {
+																openImageModal(`data:image/*;base64,${image.image_data}`);
+																event.preventDefault();
+															}
+														}}
+														aria-label="Vis billede i fuld størrelse"
+													>
+														<img
+															src={`data:image/*;base64,${image.image_data}`}
+															alt="Vedhæftet billede"
+															class="mt-4 max-w-full rounded-lg"
+														/>
+													</button>
+												{/each}
+											</div>
+										{/if}
 
-						<div class="flex justify-end items-center mt-4 gap-4">
-							<button
-								class="text-gray-600 hover:text-gray-800 focus:outline-none flex items-center"
-								on:click={() => openEditModal(report, 'report')}
-							>
-								<FontAwesomeIcon icon={faEdit} class="h-6 w-6 mr-2" />
-								Rediger
-							</button>
-						</div>
-
-						<!-- Comments -->
-						<div class="mt-4">
-							{#each $scheduleReportComments[report.id] || [] as comment}
-								<div class="comment bg-[#fff7ee] p-4 rounded-lg mt-2">
-									<div class="flex justify-between">
-										<p class="font-semibold">{comment.firstname} {comment.lastname}</p>
-										<p class="text-sm text-gray-600">{comment.created_at}</p>
+										{#if comment.user_id === Number(user.id)}
+											<button
+												class="text-blue-500 hover:underline text-sm mt-2"
+												on:click={() => openEditModal(comment, 'comment')}
+											>
+												<FontAwesomeIcon icon={faEdit} class="h-4 w-4 mr-1" />
+												<span>Rediger</span>
+											</button>
+										{/if}
 									</div>
-									<p class="mt-2">{comment.content}</p>
+								{/each}
 
-									{#if comment.images && comment.images.length > 0}
+								<!-- Add new comment -->
+								<div class="mt-4">
+									<textarea
+										class="w-full p-2 border border-gray-300 rounded-lg"
+										bind:value={newScheduleReportCommentContent[report.id]}
+										placeholder="Skriv en kommentar..."
+										on:paste={(e) => handleCommentPaste(e, report.id)}
+									></textarea>
+
+									<!-- Filinput til billeder -->
+									<div class="mt-2">
+										<label for={`comment-image-${report.id}`}>Tilføj billeder (valgfrit)</label>
+										<input
+											type="file"
+											id={`comment-image-${report.id}`}
+											on:change={(e) => handleCommentFileChange(e, report.id)}
+											accept="image/*"
+											multiple
+											class="w-full p-2 border border-gray-300 rounded-lg"
+										/>
+									</div>
+
+									<!-- Forhåndsvisning af billeder -->
+									{#if newScheduleReportCommentImages[report.id]?.length > 0}
 										<div class="mt-4 grid grid-cols-3 gap-4">
-											{#each comment.images as image}
-												<button
-													class="p-0 border-none bg-transparent cursor-pointer"
-													on:click={() => openImageModal(`data:image/*;base64,${image.image_data}`)}
-													on:keydown={(event) => {
-														if (event.key === 'Enter' || event.key === ' ') {
-															openImageModal(`data:image/*;base64,${image.image_data}`);
-															event.preventDefault();
-														}
-													}}
-													aria-label="Vis billede i fuld størrelse"
-												>
+											{#each newScheduleReportCommentImages[report.id] as image, index}
+												<div class="relative">
 													<img
-														src={`data:image/*;base64,${image.image_data}`}
-														alt="Vedhæftet billede"
-														class="mt-4 max-w-full rounded-lg"
+														src={`data:image/*;base64,${image}`}
+														alt={`Billede ${index + 1}`}
+														class="w-full h-auto rounded-lg"
 													/>
-												</button>
+													<button
+														type="button"
+														class="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1"
+														on:click={() => removeCommentImage(report.id, index)}
+														title="Fjern billede"
+													>
+														&times;
+													</button>
+												</div>
 											{/each}
 										</div>
 									{/if}
 
-									{#if comment.user_id === Number(user.id)}
-										<button
-											class="text-blue-500 hover:underline text-sm mt-2"
-											on:click={() => openEditModal(comment, 'comment')}
-										>
-											<FontAwesomeIcon icon={faEdit} class="h-4 w-4 mr-1" />
-											<span>Rediger</span>
-										</button>
-									{/if}
+									<button
+										class="mt-2 px-4 py-2 bg-costumRed text-white rounded-lg hover:bg-costumRedHover"
+										on:click={() => submitNewScheduleReportComment(report.id)}
+									>
+										Tilføj kommentar
+									</button>
 								</div>
-							{/each}
-
-							<!-- Add new comment -->
-							<div class="mt-4">
-								<textarea
-									class="w-full p-2 border border-gray-300 rounded-lg"
-									bind:value={newScheduleReportCommentContent[report.id]}
-									placeholder="Skriv en kommentar..."
-									on:paste={(e) => handleCommentPaste(e, report.id)}
-								></textarea>
-
-								<!-- Filinput til billeder -->
-								<div class="mt-2">
-									<label for={`comment-image-${report.id}`}>Tilføj billeder (valgfrit)</label>
-									<input
-										type="file"
-										id={`comment-image-${report.id}`}
-										on:change={(e) => handleCommentFileChange(e, report.id)}
-										accept="image/*"
-										multiple
-										class="w-full p-2 border border-gray-300 rounded-lg"
-									/>
-								</div>
-
-								<!-- Forhåndsvisning af billeder -->
-								{#if newScheduleReportCommentImages[report.id]?.length > 0}
-									<div class="mt-4 grid grid-cols-3 gap-4">
-										{#each newScheduleReportCommentImages[report.id] as image, index}
-											<div class="relative">
-												<img
-													src={`data:image/*;base64,${image}`}
-													alt={`Billede ${index + 1}`}
-													class="w-full h-auto rounded-lg"
-												/>
-												<button
-													type="button"
-													class="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1"
-													on:click={() => removeCommentImage(report.id, index)}
-													title="Fjern billede"
-												>
-													&times;
-												</button>
-											</div>
-										{/each}
-									</div>
-								{/if}
-
-								<button
-									class="mt-2 px-4 py-2 bg-costumRed text-white rounded-lg hover:bg-costumRedHover"
-									on:click={() => submitNewScheduleReportComment(report.id)}
-								>
-									Tilføj kommentar
-								</button>
 							</div>
-						</div>
-					</li>
-				{/each}
-			</ul>
-		{:else}
-			<p class="text-center text-lg">Ingen planlagte rapporter</p>
-		{/if}
-	</div>
+						</li>
+					{/each}
+				</ul>
+			{:else}
+				<p class="text-center text-lg">Ingen planlagte rapporter</p>
+			{/if}
+		</div>
+	{/if}
 
 	<ImageModal show={showImageModal} imageSrc={currentImageSrc} onClose={closeImageModal} />
 
