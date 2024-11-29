@@ -1,6 +1,8 @@
 <script>
 	import { page } from '$app/stores';
 	import socket from '$lib/socket';
+	import { faPaperclip, faArrowRight } from '@fortawesome/free-solid-svg-icons';
+	import { FontAwesomeIcon } from '@fortawesome/svelte-fontawesome';
 
 	export let reportType;
 	export let reportTitle = 'Samlet rapport (sidste 24 timer)';
@@ -95,28 +97,37 @@
 <div class="max-w-3xl mx-auto" on:paste={handlePaste}>
 	<h2 class="text-4xl font-semibold text-center my-6">{reportTitle}</h2>
 
-	<form on:submit|preventDefault={handleCreateReport}>
-		<div>
+	<form on:submit|preventDefault={handleCreateReport} class="relative">
+		<div class="relative">
 			<label for="content" class="sr-only">Tilføj til rapporten</label>
 			<textarea
 				id="content"
 				bind:value={content}
 				placeholder="Tilføj til rapporten her..."
-				class="w-full h-28 p-4 bg-[#ECE0D1] rounded-lg placeholder-gray-600 text-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-400"
+				class="w-full h-28 p-4 bg-[#ECE0D1] rounded-lg placeholder-gray-600 text-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-400 pr-14"
 				required
 			></textarea>
+			<div class="absolute right-4 bottom-4 flex gap-2 items-center">
+				<label for="file-input" class="cursor-pointer">
+					<FontAwesomeIcon icon={faPaperclip} class="text-gray-600 hover:text-gray-800 w-5 h-5" />
+					<input
+						type="file"
+						id="file-input"
+						on:change={handleFileChange}
+						accept="image/*"
+						multiple
+						class="hidden"
+					/>
+				</label>
+				<button
+					type="submit"
+					class="bg-HeaderBg text-white py-2 px-5 rounded-full hover:bg-toggleBg focus:outline-none focus:ring-2 focus:ring-red-400"
+				>
+					<FontAwesomeIcon icon={faArrowRight} class="w-5 h-5" />
+				</button>
+			</div>
 		</div>
-		<div class="mt-4">
-			<label for="image">Tilføj billeder (valgfrit)</label>
-			<input
-				type="file"
-				id="image"
-				on:change={handleFileChange}
-				accept="image/*"
-				multiple
-				class="w-full p-2 border border-gray-300 rounded-lg"
-			/>
-		</div>
+
 		{#if images.length > 0}
 			<div class="mt-4 grid grid-cols-3 gap-4">
 				{#each images as image, index}
@@ -138,13 +149,5 @@
 				{/each}
 			</div>
 		{/if}
-		<div class="flex justify-end mt-4">
-			<button
-				type="submit"
-				class="px-6 py-2 bg-[#D14343] text-white font-semibold rounded-lg hover:bg-[#B23030] focus:outline-none focus:ring-2 focus:ring-red-400"
-			>
-				Opret Rapport
-			</button>
-		</div>
 	</form>
 </div>

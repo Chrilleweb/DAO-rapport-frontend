@@ -7,7 +7,7 @@
 	import { onMount, onDestroy } from 'svelte';
 	import EditModal from '$lib/components/ui/EditModal.svelte';
 	import { FontAwesomeIcon } from '@fortawesome/svelte-fontawesome';
-	import { faEdit } from '@fortawesome/free-solid-svg-icons';
+	import { faEdit, faPaperclip, faArrowRight } from '@fortawesome/free-solid-svg-icons';
 	import ImageModal from '$lib/components/ui/ImageModal.svelte';
 	import Spinner from '$lib/components/ui/Spinner.svelte';
 
@@ -479,28 +479,35 @@
 	<h2 class="text-4xl font-semibold text-center my-6">Planlæg en rapport</h2>
 
 	<!-- Form to schedule a new report -->
-	<form on:submit|preventDefault={submitScheduledReport}>
-		<div>
+	<form on:submit|preventDefault={submitScheduledReport} class="relative">
+		<div class="relative">
 			<label for="reportContent" class="sr-only">Rapportindhold</label>
 			<textarea
 				id="reportContent"
 				bind:value={reportContent}
 				placeholder="Planlæg din rapport her..."
-				class="w-full h-28 p-4 bg-[#ECE0D1] rounded-lg placeholder-gray-600 text-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-400"
+				class="w-full h-28 p-4 bg-[#ECE0D1] rounded-lg placeholder-gray-600 text-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-400 pr-14"
 				required
 			></textarea>
-		</div>
-
-		<div class="mt-4">
-			<label for="image">Tilføj billeder (valgfrit)</label>
-			<input
-				type="file"
-				id="image"
-				on:change={handleFileChange}
-				accept="image/*"
-				multiple
-				class="w-full p-2 border border-gray-300 rounded-lg"
-			/>
+			<div class="absolute right-4 bottom-4 flex gap-2 items-center">
+				<label for="file-input" class="cursor-pointer">
+					<FontAwesomeIcon icon={faPaperclip} class="text-gray-600 hover:text-gray-800 w-5 h-5" />
+					<input
+						type="file"
+						id="file-input"
+						on:change={handleFileChange}
+						accept="image/*"
+						multiple
+						class="hidden"
+					/>
+				</label>
+				<button
+					type="submit"
+					class="bg-HeaderBg text-white py-2 px-5 rounded-full hover:bg-toggleBg focus:outline-none focus:ring-2 focus:ring-red-400"
+				>
+					<FontAwesomeIcon icon={faArrowRight} class="w-5 h-5" />
+				</button>
+			</div>
 		</div>
 
 		{#if images.length > 0}
@@ -556,15 +563,6 @@
 					{/each}
 				</select>
 			</div>
-		</div>
-
-		<div class="flex justify-end">
-			<button
-				type="submit"
-				class="px-6 py-2 bg-[#D14343] text-white font-semibold rounded-lg hover:bg-[#B23030] focus:outline-none focus:ring-2 focus:ring-red-400"
-			>
-				Planlæg Rapport
-			</button>
 		</div>
 	</form>
 

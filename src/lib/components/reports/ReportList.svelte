@@ -451,11 +451,11 @@
 	</div>
 
 	{#if !isDataLoaded}
-		<div class="flex items-center justify-center h-96">
+		<div class="flex items-center justify-center h-[28rem]">
 			<Spinner />
 		</div>
 	{:else}
-		<div class="report-list overflow-y-auto h-96">
+		<div class="report-list overflow-y-auto h-[28rem]">
 			{#if $reports.length > 0}
 				<ul>
 					{#each $reports as report}
