@@ -119,8 +119,10 @@
 			};
 
 			if (isOwner) {
+				showErrorModal = false;
 				if (updatedContent.trim() === '') {
-					alert('Indholdet kan ikke være tomt.');
+					errorMessage = 'Rapportens indhold kan ikke være tomt.';
+					showErrorModal = true;
 					return;
 				}
 				payload.updatedContent = updatedContent.trim();
@@ -561,7 +563,7 @@
 			<Spinner />
 		</div>
 	{:else}
-		<div class="report-list overflow-y-auto h-[30rem]">
+		<div class="report-list overflow-y-auto h-[35rem]">
 			{#if $reports.length > 0}
 				<ul>
 					{#each $reports as report}

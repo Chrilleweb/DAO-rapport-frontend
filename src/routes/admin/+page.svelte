@@ -82,7 +82,7 @@
 	}
 </script>
 
-<div class="max-w-7xl mx-auto p-8 ml-48">
+<div class="max-w-7xl mx-auto p-8 pl-52 items-center">
 	{#if user.role !== 'admin'}
 	<ErrorAdmin />
 	{:else}

@@ -148,7 +148,7 @@
 
 {#if show}
 	<div
-		class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50"
+		class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-40"
 		role="dialog"
 		aria-modal="true"
 	>
@@ -162,7 +162,6 @@
 						class="w-full h-40 p-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2"
 						{placeholder}
 						bind:value={updatedContent}
-						required
 						on:paste={handlePaste}
 					></textarea>
 
@@ -226,7 +225,7 @@
 					{/if}
 				{/if}
 
-				{#if isScheduledReport}
+				{#if isScheduledReport && isOwner}
 					<!-- Planlagt Dato og Tid -->
 					<label for="scheduledTime" class="block mt-4 text-gray-700 font-semibold mb-2">
 						Planlagt dato og tid:

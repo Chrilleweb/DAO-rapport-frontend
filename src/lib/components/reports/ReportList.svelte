@@ -80,8 +80,10 @@
 			};
 
 			if (isOwner) {
+				showErrorModal = false;
 				if (updatedContent.trim() === '') {
-					alert('Indholdet kan ikke være tomt.');
+					errorMessage = 'Rapportens indhold kan ikke være tomt.';
+					showErrorModal = true;
 					return;
 				}
 				payload.updatedContent = updatedContent.trim();
@@ -451,11 +453,11 @@
 	</div>
 
 	{#if !isDataLoaded}
-		<div class="flex items-center justify-center h-[28rem]">
+		<div class="flex items-center justify-center h-[35rem]">
 			<Spinner />
 		</div>
 	{:else}
-		<div class="report-list overflow-y-auto h-[28rem]">
+		<div class="report-list overflow-y-auto h-[35rem]">
 			{#if $reports.length > 0}
 				<ul>
 					{#each $reports as report}
