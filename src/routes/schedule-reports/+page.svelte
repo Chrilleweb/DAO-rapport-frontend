@@ -72,18 +72,23 @@
 		}
 	}
 
-	async function handlePaste(event) {
-		const clipboardItems = event.clipboardData.items;
+	async function handlePaste(event, context = { type: 'report', reportId: null }) {
+    const clipboardItems = event.clipboardData.items;
 
-		for (const item of clipboardItems) {
-			if (item.type.startsWith('image/')) {
-				const file = item.getAsFile();
-				if (file) {
-					addFiles([file]);
-				}
-			}
-		}
-	}
+    for (const item of clipboardItems) {
+        if (item.type.startsWith('image/')) {
+            const file = item.getAsFile();
+            if (file) {
+                if (context.type === 'report') {
+                    addFiles([file]); // Tilføj til planlagt rapport
+                } else if (context.type === 'comment') {
+                    addCommentFiles([file], context.reportId); // Tilføj til kommentar
+                }
+            }
+        }
+    }
+}
+
 
 	async function addFiles(files) {
 		const maxSizeInBytes = 10 * 1024 * 1024; // 10MB
@@ -469,7 +474,7 @@
 	});
 </script>
 
-<div class="max-w-3xl mx-auto" on:paste={handlePaste}>
+<div class="max-w-3xl mx-auto">
 	<!-- Success Modal -->
 	<SuccessModal message={successMessage} show={showSuccessModal} />
 
@@ -487,6 +492,7 @@
 				bind:value={reportContent}
 				placeholder="Planlæg din rapport her..."
 				class="w-full h-28 p-4 bg-[#ECE0D1] rounded-lg placeholder-gray-600 text-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-400 pr-14"
+				on:paste={(e) => handlePaste(e, { type: 'report' })}
 				required
 			></textarea>
 			<div class="absolute right-4 bottom-4 flex gap-2 items-center">
@@ -675,33 +681,47 @@
 
 								<!-- Add new comment -->
 								<div class="mt-4">
-									<textarea
-										class="w-full p-2 border border-gray-300 rounded-lg"
-										bind:value={newScheduleReportCommentContent[report.id]}
-										placeholder="Skriv en kommentar..."
-										on:paste={(e) => handleCommentPaste(e, report.id)}
-									></textarea>
-
-									<!-- Filinput til billeder -->
-									<div class="mt-2">
-										<label for={`comment-image-${report.id}`}>Tilføj billeder (valgfrit)</label>
-										<input
-											type="file"
-											id={`comment-image-${report.id}`}
-											on:change={(e) => handleCommentFileChange(e, report.id)}
-											accept="image/*"
-											multiple
-											class="w-full p-2 border border-gray-300 rounded-lg"
-										/>
+									<div class="relative">
+										<textarea
+											class="w-full h-28 p-4 bg-white rounded-lg placeholder-gray-600 text-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-400 pr-14"
+											bind:value={newScheduleReportCommentContent[report.id]}
+											placeholder="Skriv en kommentar..."
+											on:paste={(e) => handlePaste(e, { type: 'comment', reportId: report.id })}
+										></textarea>
+										<div class="absolute right-4 bottom-4 flex gap-2 items-center">
+											<!-- Attach icon -->
+											<label for={`schedule-comment-image-${report.id}`} class="cursor-pointer">
+												<FontAwesomeIcon
+													icon={faPaperclip}
+													class="text-gray-600 hover:text-gray-800 w-5 h-5"
+												/>
+												<input
+													type="file"
+													id={`schedule-comment-image-${report.id}`}
+													on:change={(e) => handleCommentFileChange(e, report.id)}
+													accept="image/*"
+													multiple
+													class="hidden"
+												/>
+											</label>
+											<!-- Send icon -->
+											<button
+												type="button"
+												class="bg-HeaderBg text-white py-2 px-5 rounded-full hover:bg-toggleBg focus:outline-none focus:ring-2 focus:ring-red-400"
+												on:click={() => submitNewScheduleReportComment(report.id)}
+											>
+												<FontAwesomeIcon icon={faArrowRight} class="w-5 h-5" />
+											</button>
+										</div>
 									</div>
 
-									<!-- Forhåndsvisning af billeder -->
+									<!-- Preview images -->
 									{#if newScheduleReportCommentImages[report.id]?.length > 0}
 										<div class="mt-4 grid grid-cols-3 gap-4">
 											{#each newScheduleReportCommentImages[report.id] as image, index}
 												<div class="relative">
 													<img
-														src={`data:image/*;base64,${image}`}
+														src={`data:image/*;base64,${image.image_data || image}`}
 														alt={`Billede ${index + 1}`}
 														class="w-full h-auto rounded-lg"
 													/>
@@ -717,13 +737,6 @@
 											{/each}
 										</div>
 									{/if}
-
-									<button
-										class="mt-2 px-4 py-2 bg-costumRed text-white rounded-lg hover:bg-costumRedHover"
-										on:click={() => submitNewScheduleReportComment(report.id)}
-									>
-										Tilføj kommentar
-									</button>
 								</div>
 							</div>
 						</li>

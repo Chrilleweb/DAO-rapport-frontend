@@ -3,7 +3,7 @@
 	import ImageModal from '$lib/components/ui/ImageModal.svelte';
 	import { onMount, onDestroy } from 'svelte';
 	import { FontAwesomeIcon } from '@fortawesome/svelte-fontawesome';
-	import { faEdit } from '@fortawesome/free-solid-svg-icons';
+	import { faEdit, faPaperclip, faArrowRight } from '@fortawesome/free-solid-svg-icons';
 	import { writable } from 'svelte/store';
 	import socket from '$lib/socket';
 	import { page } from '$app/stores';
@@ -664,24 +664,38 @@
 
 								<!-- Tilføj ny kommentar -->
 								<div class="mt-4">
-									<textarea
-										class="w-full p-2 border border-gray-300 rounded-lg"
-										bind:value={newCommentContent[report.id]}
-										placeholder="Skriv en kommentar..."
-										on:paste={(e) => handleCommentPaste(e, report.id)}
-									></textarea>
-
-									<!-- Filinput til billeder -->
-									<div class="mt-2">
-										<label for={`comment-image-${report.id}`}>Tilføj billeder (valgfrit)</label>
-										<input
-											type="file"
-											id={`comment-image-${report.id}`}
-											on:change={(e) => handleCommentFileChange(e, report.id)}
-											accept="image/*"
-											multiple
-											class="w-full p-2 border border-gray-300 rounded-lg"
-										/>
+									<div class="relative">
+										<textarea
+											class="w-full h-28 p-4 bg-white rounded-lg placeholder-gray-600 text-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-400 pr-14"
+											bind:value={newCommentContent[report.id]}
+											placeholder="Skriv en kommentar..."
+											on:paste={(e) => handleCommentPaste(e, report.id)}
+										></textarea>
+										<div class="absolute right-4 bottom-4 flex gap-2 items-center">
+											<!-- Vedhæft ikon -->
+											<label for={`comment-image-${report.id}`} class="cursor-pointer">
+												<FontAwesomeIcon
+													icon={faPaperclip}
+													class="text-gray-600 hover:text-gray-800 w-5 h-5"
+												/>
+												<input
+													type="file"
+													id={`comment-image-${report.id}`}
+													on:change={(e) => handleCommentFileChange(e, report.id)}
+													accept="image/*"
+													multiple
+													class="hidden"
+												/>
+											</label>
+											<!-- Send ikon -->
+											<button
+												type="button"
+												class="bg-HeaderBg text-white py-2 px-5 rounded-full hover:bg-toggleBg focus:outline-none focus:ring-2 focus:ring-red-400"
+												on:click={() => submitNewComment(report.id)}
+											>
+												<FontAwesomeIcon icon={faArrowRight} class="w-5 h-5" />
+											</button>
+										</div>
 									</div>
 
 									<!-- Forhåndsvisning af billeder -->
@@ -706,13 +720,6 @@
 											{/each}
 										</div>
 									{/if}
-
-									<button
-										class="mt-2 px-4 py-2 bg-costumRed text-white rounded-lg hover:bg-costumRedHover"
-										on:click={() => submitNewComment(report.id)}
-									>
-										Tilføj kommentar
-									</button>
 								</div>
 							</div>
 						</li>
