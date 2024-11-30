@@ -142,14 +142,30 @@
 	}
 
 	function submitScheduledReport() {
+		// Brug lokal tid uden at konvertere til UTC
+		const localDateTime = new Date(scheduledDateTime); // Lokal tid
+
+		// Ekstraher lokale komponenter
+		const year = localDateTime.getFullYear();
+		const month = String(localDateTime.getMonth() + 1).padStart(2, '0');
+		const day = String(localDateTime.getDate()).padStart(2, '0');
+		const hours = String(localDateTime.getHours()).padStart(2, '0');
+		const minutes = String(localDateTime.getMinutes()).padStart(2, '0');
+		const seconds = '00'; // Antag, at sekunder er nul
+
+		// Formater dato til MySQL-format
+		const mysqlFormattedDateTime = `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+
+		// Send til backend uden tidszonekonvertering
 		socket.emit('schedule report', {
 			user_id: Number(user.id),
 			content: reportContent.trim(),
-			scheduled_time: scheduledDateTime,
+			scheduled_time: mysqlFormattedDateTime, // Sender lokal tid
 			report_type_id: selectedReportTypeId,
 			images
 		});
-		// Reset the form
+
+		// Nulstil formularen
 		reportContent = '';
 		scheduledDateTime = '';
 		images = [];
