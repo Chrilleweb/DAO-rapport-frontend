@@ -152,6 +152,28 @@
 	function cancelDelete() {
 		showConfirmDelete = false;
 	}
+
+	function getCESTNow() {
+		const now = new Date();
+		const timeZone = 'Europe/Copenhagen';
+
+		// Brug Intl.DateTimeFormat til at få tiden i dansk tidszone
+		const formatter = new Intl.DateTimeFormat('en-CA', {
+			timeZone,
+			year: 'numeric',
+			month: '2-digit',
+			day: '2-digit',
+			hour: '2-digit',
+			minute: '2-digit',
+			hour12: false
+		});
+
+		const parts = formatter.formatToParts(now);
+		const datePart = `${parts.find((part) => part.type === 'year').value}-${parts.find((part) => part.type === 'month').value}-${parts.find((part) => part.type === 'day').value}`;
+		const timePart = `${parts.find((part) => part.type === 'hour').value}:${parts.find((part) => part.type === 'minute').value}`;
+
+		return `${datePart}T${timePart}`;
+	}
 </script>
 
 {#if show}
@@ -162,7 +184,7 @@
 	>
 	<!-- ErrorModal -->
 	<ErrorModal message={errorMessage} show={showErrorModal} />
-	
+
 		<div class="bg-white rounded-lg overflow-hidden shadow-xl max-w-md w-full">
 			<form on:submit={handleSubmit} class="p-6">
 				<h2 class="text-2xl font-semibold mb-4 text-center">{title}</h2>
@@ -240,6 +262,7 @@
 						type="datetime-local"
 						bind:value={updatedScheduledTime}
 						class="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2"
+						min={getCESTNow()}
 						required
 					/>
 				{/if}
