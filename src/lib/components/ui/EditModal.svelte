@@ -162,6 +162,7 @@
 						class="w-full h-40 p-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2"
 						{placeholder}
 						bind:value={updatedContent}
+						required
 						on:paste={handlePaste}
 					></textarea>
 

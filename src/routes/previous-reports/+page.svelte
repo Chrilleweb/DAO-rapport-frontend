@@ -160,21 +160,23 @@
 
 	function submitNewComment(reportId) {
 		const content = newCommentContent[reportId]?.trim();
-		const images = newCommentImages[reportId] || [];
-		if (!content && images.length === 0) {
-			showErrorModal = false;
-			errorMessage = 'Kommentaren kan ikke være tom.';
+
+		showErrorModal = false;
+		if (!content) {
 			showErrorModal = true;
+			errorMessage = 'Kommentaren skal indeholde tekst.';
 			return;
 		}
 
+		// Send kommentaren, da content er valid
 		socket.emit('new comment', {
 			report_id: reportId,
 			user_id: Number(user.id),
 			content,
-			images
+			images: newCommentImages[reportId] || [] // Vedhæft billeder, hvis nogen
 		});
 
+		// Ryd tekst og billeder efter afsendelse
 		newCommentContent[reportId] = '';
 		newCommentImages[reportId] = [];
 	}

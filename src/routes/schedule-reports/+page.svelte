@@ -300,22 +300,23 @@
 
 	function submitNewScheduleReportComment(reportId) {
 		const content = newScheduleReportCommentContent[reportId]?.trim();
-		const images = newScheduleReportCommentImages[reportId] || [];
-		if (!content && images.length === 0) {
-			showErrorModal = false;
-			errorMessage = 'Kommentaren kan ikke være tom.';
+
+		showErrorModal = false;
+		if (!content) {
 			showErrorModal = true;
+			errorMessage = 'Kommentaren skal indeholde tekst.';
 			return;
 		}
 
+		// Send kommentaren, da content er valid
 		socket.emit('new schedule report comment', {
 			schedule_report_id: reportId,
 			user_id: Number(user.id),
 			content,
-			images
+			images: newScheduleReportCommentImages[reportId] || [] // Vedhæft billeder, hvis nogen
 		});
 
-		// Reset the textarea and images
+		// Ryd tekst og billeder efter afsendelse
 		newScheduleReportCommentContent[reportId] = '';
 		newScheduleReportCommentImages[reportId] = [];
 	}
