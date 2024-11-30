@@ -142,27 +142,31 @@
 	}
 
 	function submitScheduledReport() {
-    // Konverter lokal tid til MySQL-format i dansk tid
-    const localDateTime = new Date(scheduledDateTime); // Bruger lokal tid som standard
-    const year = localDateTime.getFullYear();
-    const month = String(localDateTime.getMonth() + 1).padStart(2, '0'); // Måneder er 0-indekseret
-    const day = String(localDateTime.getDate()).padStart(2, '0');
-    const hours = String(localDateTime.getHours()).padStart(2, '0');
-    const minutes = String(localDateTime.getMinutes()).padStart(2, '0');
-    const seconds = String(localDateTime.getSeconds()).padStart(2, '0');
+    // Konverter lokal tid til UTC
+    const localDateTime = new Date(scheduledDateTime); // Lokal tid
+    const utcDateTime = new Date(localDateTime.getTime() - localDateTime.getTimezoneOffset() * 60000);
+
+    // Ekstraher UTC-komponenterne
+    const year = utcDateTime.getUTCFullYear();
+    const month = String(utcDateTime.getUTCMonth() + 1).padStart(2, '0');
+    const day = String(utcDateTime.getUTCDate()).padStart(2, '0');
+    const hours = String(utcDateTime.getUTCHours()).padStart(2, '0');
+    const minutes = String(utcDateTime.getUTCMinutes()).padStart(2, '0');
+    const seconds = String(utcDateTime.getUTCSeconds()).padStart(2, '0');
 
     // Formater dato til MySQL-format
     const mysqlFormattedDateTime = `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
 
+    // Send til backend
     socket.emit('schedule report', {
         user_id: Number(user.id),
         content: reportContent.trim(),
-        scheduled_time: mysqlFormattedDateTime, // Send dansk tid i MySQL-format
+        scheduled_time: mysqlFormattedDateTime, // Sender UTC tid
         report_type_id: selectedReportTypeId,
         images,
     });
 
-    // Reset formularen
+    // Nulstil formularen
     reportContent = '';
     scheduledDateTime = '';
     images = [];
