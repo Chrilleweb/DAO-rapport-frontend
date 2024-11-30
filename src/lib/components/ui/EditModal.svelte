@@ -78,7 +78,7 @@
 	}
 
 	async function addFiles(files) {
-		const maxSizeInBytes = 10 * 1024 * 1024; // 10MB
+		const maxSizeInBytes = 500 * 1024; // 500 KB
 		const allowedTypes = ['image/jpeg', 'image/png', 'image/gif'];
 		const filePromises = [];
 
@@ -87,7 +87,7 @@
 
 			// Valider filstørrelse
 			if (file.size > maxSizeInBytes) {
-				alert(`Billedet ${file.name} er for stort. Maksimalt tilladt størrelse er 10MB.`);
+				alert(`Billedet ${file.name} er for stort. Maksimalt tilladt størrelse er 500 KB.`);
 				continue;
 			}
 
@@ -179,51 +179,44 @@
 						/>
 					</div>
 
-					<!-- Eksisterende Billeder -->
-					{#if existingImages.length > 0}
-						<div class="mt-4 grid grid-cols-3 gap-4">
-							{#each existingImages as image, index}
-								<div class="relative">
-									<img
-										src={`data:image/*;base64,${image.image_data}`}
-										alt="Vedhæftet billede"
-										class="w-full h-auto rounded-lg"
-									/>
-									<button
-										type="button"
-										class="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1"
-										on:click={() => removeExistingImage(index)}
-										title="Fjern billede"
-									>
-										&times;
-									</button>
-								</div>
-							{/each}
-						</div>
-					{/if}
+					<!-- Kombiner eksisterende og nye billeder -->
+					<div class="mt-4 grid grid-cols-3 gap-4">
+						{#each existingImages as image, index}
+							<div class="relative">
+								<img
+									src={`data:image/*;base64,${image.image_data}`}
+									alt="Eksisterende billede"
+									class="w-full h-auto rounded-lg"
+								/>
+								<button
+									type="button"
+									class="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1"
+									on:click={() => removeExistingImage(index)}
+									title="Fjern billede"
+								>
+									&times;
+								</button>
+							</div>
+						{/each}
 
-					<!-- Nye Billeder at Tilføje -->
-					{#if imagesToAdd.length > 0}
-						<div class="mt-4 grid grid-cols-3 gap-4">
-							{#each imagesToAdd as image, index}
-								<div class="relative">
-									<img
-										src={`data:image/*;base64,${image}`}
-										alt="Nyt billede"
-										class="w-full h-auto rounded-lg"
-									/>
-									<button
-										type="button"
-										class="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1"
-										on:click={() => removeNewImage(index)}
-										title="Fjern billede"
-									>
-										&times;
-									</button>
-								</div>
-							{/each}
-						</div>
-					{/if}
+						{#each imagesToAdd as image, index}
+							<div class="relative">
+								<img
+									src={`data:image/*;base64,${image}`}
+									alt="Nyt billede"
+									class="w-full h-auto rounded-lg"
+								/>
+								<button
+									type="button"
+									class="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1"
+									on:click={() => removeNewImage(index)}
+									title="Fjern billede"
+								>
+									&times;
+								</button>
+							</div>
+						{/each}
+					</div>
 				{/if}
 
 				{#if isScheduledReport && isOwner}

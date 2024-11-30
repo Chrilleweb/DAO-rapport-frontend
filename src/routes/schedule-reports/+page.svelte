@@ -90,7 +90,7 @@
 	}
 
 	async function addFiles(files) {
-		const maxSizeInBytes = 10 * 1024 * 1024; // 10MB
+		const maxSizeInBytes = 500 * 1024; // 500 KB
 		const allowedTypes = ['image/jpeg', 'image/png', 'image/gif'];
 		const filePromises = [];
 
@@ -99,7 +99,7 @@
 
 			// Validate file size
 			if (file.size > maxSizeInBytes) {
-				alert(`Billedet ${file.name} er for stort. Maksimalt tilladt størrelse er 10MB.`);
+				alert(`Billedet ${file.name} er for stort. Maksimalt tilladt størrelse er 500 KB.`);
 				continue;
 			}
 
