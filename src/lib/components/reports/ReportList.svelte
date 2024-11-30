@@ -121,6 +121,7 @@
 
 	function submitNewComment(reportId) {
 		const content = newCommentContent[reportId]?.trim();
+		const images = newCommentImages[reportId] || [];
 
 		showErrorModal = false;
 		if (!content) {
@@ -134,7 +135,7 @@
 			report_id: reportId,
 			user_id: Number(user.id),
 			content,
-			images: newCommentImages[reportId] || [] // Vedhæft billeder, hvis nogen
+			images // Vedhæft billeder, hvis nogen
 		});
 
 		// Ryd tekst og billeder efter afsendelse

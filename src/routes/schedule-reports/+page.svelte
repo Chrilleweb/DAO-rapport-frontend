@@ -73,22 +73,21 @@
 	}
 
 	async function handlePaste(event, context = { type: 'report', reportId: null }) {
-    const clipboardItems = event.clipboardData.items;
+		const clipboardItems = event.clipboardData.items;
 
-    for (const item of clipboardItems) {
-        if (item.type.startsWith('image/')) {
-            const file = item.getAsFile();
-            if (file) {
-                if (context.type === 'report') {
-                    addFiles([file]); // Tilføj til planlagt rapport
-                } else if (context.type === 'comment') {
-                    addCommentFiles([file], context.reportId); // Tilføj til kommentar
-                }
-            }
-        }
-    }
-}
-
+		for (const item of clipboardItems) {
+			if (item.type.startsWith('image/')) {
+				const file = item.getAsFile();
+				if (file) {
+					if (context.type === 'report') {
+						addFiles([file]); // Tilføj til planlagt rapport
+					} else if (context.type === 'comment') {
+						addCommentFiles([file], context.reportId); // Tilføj til kommentar
+					}
+				}
+			}
+		}
+	}
 
 	async function addFiles(files) {
 		const maxSizeInBytes = 10 * 1024 * 1024; // 10MB
@@ -300,6 +299,7 @@
 
 	function submitNewScheduleReportComment(reportId) {
 		const content = newScheduleReportCommentContent[reportId]?.trim();
+		const images = newScheduleReportCommentImages[reportId] || [];
 
 		showErrorModal = false;
 		if (!content) {
@@ -313,7 +313,7 @@
 			schedule_report_id: reportId,
 			user_id: Number(user.id),
 			content,
-			images: newScheduleReportCommentImages[reportId] || [] // Vedhæft billeder, hvis nogen
+			images // Vedhæft billeder, hvis nogen
 		});
 
 		// Ryd tekst og billeder efter afsendelse
