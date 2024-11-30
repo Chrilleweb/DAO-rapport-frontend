@@ -142,6 +142,7 @@
 	}
 
 	function submitScheduledReport() {
+		console.log(scheduledDateTime);
 		socket.emit('schedule report', {
 			user_id: Number(user.id),
 			content: reportContent.trim(),
