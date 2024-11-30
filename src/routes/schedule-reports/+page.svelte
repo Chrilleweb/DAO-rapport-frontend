@@ -142,35 +142,18 @@
 	}
 
 	function submitScheduledReport() {
-    // Konverter lokal tid til UTC
-    const localDateTime = new Date(scheduledDateTime); // Lokal tid
-    const utcDateTime = new Date(localDateTime.getTime() - localDateTime.getTimezoneOffset() * 60000);
-
-    // Ekstraher UTC-komponenterne
-    const year = utcDateTime.getUTCFullYear();
-    const month = String(utcDateTime.getUTCMonth() + 1).padStart(2, '0');
-    const day = String(utcDateTime.getUTCDate()).padStart(2, '0');
-    const hours = String(utcDateTime.getUTCHours()).padStart(2, '0');
-    const minutes = String(utcDateTime.getUTCMinutes()).padStart(2, '0');
-    const seconds = String(utcDateTime.getUTCSeconds()).padStart(2, '0');
-
-    // Formater dato til MySQL-format
-    const mysqlFormattedDateTime = `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
-
-    // Send til backend
-    socket.emit('schedule report', {
-        user_id: Number(user.id),
-        content: reportContent.trim(),
-        scheduled_time: mysqlFormattedDateTime, // Sender UTC tid
-        report_type_id: selectedReportTypeId,
-        images,
-    });
-
-    // Nulstil formularen
-    reportContent = '';
-    scheduledDateTime = '';
-    images = [];
-}
+		socket.emit('schedule report', {
+			user_id: Number(user.id),
+			content: reportContent.trim(),
+			scheduled_time: scheduledDateTime,
+			report_type_id: selectedReportTypeId,
+			images
+		});
+		// Reset the form
+		reportContent = '';
+		scheduledDateTime = '';
+		images = [];
+	}
 
 	function openEditModal(item, type) {
 		isEditing = true;
@@ -497,28 +480,6 @@
 		socket.off('update schedule report comment');
 		socket.off('new schedule report comment error');
 	});
-
-	function getCESTNow() {
-		const now = new Date();
-		const timeZone = 'Europe/Copenhagen';
-
-		// Brug Intl.DateTimeFormat til at få tiden i dansk tidszone
-		const formatter = new Intl.DateTimeFormat('en-CA', {
-			timeZone,
-			year: 'numeric',
-			month: '2-digit',
-			day: '2-digit',
-			hour: '2-digit',
-			minute: '2-digit',
-			hour12: false
-		});
-
-		const parts = formatter.formatToParts(now);
-		const datePart = `${parts.find((part) => part.type === 'year').value}-${parts.find((part) => part.type === 'month').value}-${parts.find((part) => part.type === 'day').value}`;
-		const timePart = `${parts.find((part) => part.type === 'hour').value}:${parts.find((part) => part.type === 'minute').value}`;
-
-		return `${datePart}T${timePart}`;
-	}
 </script>
 
 <div class="max-w-3xl mx-auto">
@@ -596,7 +557,6 @@
 					type="datetime-local"
 					bind:value={scheduledDateTime}
 					class="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-					min={getCESTNow()}
 					required
 				/>
 			</div>
