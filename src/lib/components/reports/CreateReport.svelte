@@ -3,11 +3,16 @@
 	import socket from '$lib/socket';
 	import { faPaperclip, faArrowRight } from '@fortawesome/free-solid-svg-icons';
 	import { FontAwesomeIcon } from '@fortawesome/svelte-fontawesome';
+	import ErrorModal from '../ui/ErrorModal.svelte';
 
 	export let reportType;
 	export let reportTitle = 'Samlet rapport (sidste 24 timer)';
 	let content = '';
 	let images = [];
+
+	// ErrorModal state
+	let errorMessage = '';
+	let showErrorModal = false;
 
 	$: user = $page.data.user;
 
@@ -32,7 +37,8 @@
 	}
 
 	async function addFiles(files) {
-		const maxSizeInBytes = 10 * 1024 * 1024; // 10MB
+		showErrorModal = false;
+		const maxSizeInBytes = 500 * 1024; // 500 KB
 		const allowedTypes = ['image/jpeg', 'image/png', 'image/gif'];
 		const filePromises = [];
 
@@ -41,13 +47,15 @@
 
 			// Valider filstørrelse
 			if (file.size > maxSizeInBytes) {
-				alert(`Billedet ${file.name} er for stort. Maksimalt tilladt størrelse er 10MB.`);
+				errorMessage = `Filen er for stor. Maksimal filstørrelse er 500 KB.`;
+				showErrorModal = true;
 				continue;
 			}
 
 			// Valider filtype
 			if (!allowedTypes.includes(file.type)) {
-				alert(`Kun JPG, PNG og GIF billeder er tilladt. Filen ${file.name} er ugyldig.`);
+				errorMessage = `Kun JPG, PNG og GIF billeder er tilladt. Filen ${file.name} er ugyldig.`;
+				showErrorModal = true;
 				continue;
 			}
 
@@ -95,6 +103,9 @@
 </script>
 
 <div class="max-w-3xl mx-auto" on:paste={handlePaste}>
+	<!-- ErrorModal -->
+	<ErrorModal message={errorMessage} show={showErrorModal} />
+	
 	<h2 class="text-4xl font-semibold text-center my-6">{reportTitle}</h2>
 
 	<form on:submit|preventDefault={handleCreateReport} class="relative">

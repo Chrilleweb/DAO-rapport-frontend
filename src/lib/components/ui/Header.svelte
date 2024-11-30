@@ -33,7 +33,7 @@
 	}
 </script>
 
-<div class="flex">
+<div class="flex z-50">
 	<aside class="bg-HeaderBg w-48 p-4 fixed h-full flex flex-col space-y-4">
 		<h1 class="text-5xl font-bold text-white text-center">DAO</h1>
 		<nav class="flex flex-col space-y-2 flex-grow">

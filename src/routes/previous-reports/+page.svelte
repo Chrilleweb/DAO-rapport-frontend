@@ -203,6 +203,7 @@
 	}
 
 	async function addCommentFiles(files, reportId) {
+		showErrorModal = false;
 		const maxSizeInBytes = 500 * 1024; // 500 KB
 		const allowedTypes = ['image/jpeg', 'image/png', 'image/gif'];
 		const filePromises = [];
@@ -212,13 +213,15 @@
 
 			// Valider filstørrelse
 			if (file.size > maxSizeInBytes) {
-				alert(`Billedet ${file.name} er for stort. Maksimalt tilladt størrelse er 500 KB.`);
+				errorMessage = `Filen er for stor. Maksimal filstørrelse er 500 KB.`;
+				showErrorModal = true;
 				continue;
 			}
 
 			// Valider filtype
 			if (!allowedTypes.includes(file.type)) {
-				alert(`Kun JPG, PNG og GIF billeder er tilladt. Filen ${file.name} er ugyldig.`);
+				errorMessage = `Kun JPG, PNG og GIF billeder er tilladt. Filen ${file.name} er ugyldig.`;
+				showErrorModal = true;
 				continue;
 			}
 
@@ -438,6 +441,7 @@
 	});
 
 	function downloadPDF() {
+		showErrorModal = false;
 		const reportsData = $reports.map((report) => ({
 			...report,
 			comments: $comments[report.id] || []
@@ -448,7 +452,8 @@
 			const reportType = uniqueReportTypes.length > 1 ? 'Samlet' : uniqueReportTypes[0];
 			generateStandardPDF(reportsData, reportType);
 		} else {
-			alert('Ingen rapporter tilgængelige.');
+			errorMessage = 'Ingen rapporter tilgængelige for download.';
+			showErrorModal = true;
 		}
 	}
 
