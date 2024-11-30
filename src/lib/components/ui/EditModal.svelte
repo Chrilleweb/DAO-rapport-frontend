@@ -1,5 +1,6 @@
 <script>
 	import ConfirmationModal from './ConfirmationModal.svelte';
+	import ErrorModal from './ErrorModal.svelte';
 	export let show = false;
 	export let title = '';
 	export let content = '';
@@ -22,6 +23,10 @@
 	let imagesToAdd = [];
 	let imagesToRemove = [];
 	let existingImages = [];
+
+	// ErrorModal state
+	let errorMessage = '';
+	let showErrorModal = false;
 
 	let showConfirmDelete = false;
 
@@ -78,6 +83,7 @@
 	}
 
 	async function addFiles(files) {
+		showErrorModal = false;
 		const maxSizeInBytes = 500 * 1024; // 500 KB
 		const allowedTypes = ['image/jpeg', 'image/png', 'image/gif'];
 		const filePromises = [];
@@ -87,13 +93,15 @@
 
 			// Valider filstørrelse
 			if (file.size > maxSizeInBytes) {
-				alert(`Billedet ${file.name} er for stort. Maksimalt tilladt størrelse er 500 KB.`);
+				errorMessage = `Filen er for stor. Maksimal filstørrelse er 500 KB.`;
+				showErrorModal = true;
 				continue;
 			}
 
 			// Valider filtype
 			if (!allowedTypes.includes(file.type)) {
-				alert(`Kun JPG, PNG og GIF billeder er tilladt. Filen ${file.name} er ugyldig.`);
+				errorMessage = `Kun JPG, PNG og GIF billeder er tilladt. Filen ${file.name} er ugyldig.`;
+				showErrorModal = true;
 				continue;
 			}
 
@@ -152,6 +160,9 @@
 		role="dialog"
 		aria-modal="true"
 	>
+	<!-- ErrorModal -->
+	<ErrorModal message={errorMessage} show={showErrorModal} />
+	
 		<div class="bg-white rounded-lg overflow-hidden shadow-xl max-w-md w-full">
 			<form on:submit={handleSubmit} class="p-6">
 				<h2 class="text-2xl font-semibold mb-4 text-center">{title}</h2>
