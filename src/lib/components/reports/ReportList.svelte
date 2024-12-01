@@ -416,7 +416,20 @@
 
 	async function downloadPDFWithAI() {
 		try {
+			showErrorModal = false; // Skjul fejlen ved start
 			isLoading = true;
+
+			// Tjek om der er rapporter
+			const reportsData = $reports.map((report) => ({
+				...report,
+				comments: $comments[report.id] || []
+			}));
+
+			if (reportsData.length === 0) {
+				errorMessage = 'Ingen rapporter tilgængelige til AI PDF-generering.';
+				showErrorModal = true;
+				return; // Stop funktionen her
+			}
 
 			// Send kun reportTypeIds til backend
 			const processedData = await processReportsWithAI(reportTypeIds);
@@ -426,8 +439,10 @@
 			const reportType = uniqueReportTypes.length > 1 ? 'Samlet' : uniqueReportTypes[0];
 			generateAIPDF(processedData, reportType);
 		} catch (error) {
+			// Hvis en fejl opstår under generering, vis modal
+			errorMessage = 'Der opstod en fejl ved generering af PDF med AI.';
+			showErrorModal = true;
 			console.error('Fejl ved generering af PDF med AI:', error);
-			alert('Der opstod en fejl ved generering af PDF med AI.');
 		} finally {
 			isLoading = false;
 		}
