@@ -4,11 +4,13 @@
 	import { faPaperclip, faArrowRight } from '@fortawesome/free-solid-svg-icons';
 	import { FontAwesomeIcon } from '@fortawesome/svelte-fontawesome';
 	import ErrorModal from '../ui/ErrorModal.svelte';
+	import { writable } from 'svelte/store';
+	import { handleFileChange, handlePaste, addFiles, removeImage } from '$lib/utils/fileUtils.js';
 
 	export let reportType;
 	export let reportTitle = 'Samlet rapport (sidste 24 timer)';
 	let content = '';
-	let images = [];
+	let images = writable([]);
 
 	// ErrorModal state
 	let errorMessage = '';
@@ -16,76 +18,9 @@
 
 	$: user = $page.data.user;
 
-	function handleFileChange(event) {
-		const files = event.target.files;
-		if (files.length > 0) {
-			addFiles(files);
-		}
-	}
-
-	async function handlePaste(event) {
-		const clipboardItems = event.clipboardData.items;
-
-		for (const item of clipboardItems) {
-			if (item.type.startsWith('image/')) {
-				const file = item.getAsFile();
-				if (file) {
-					addFiles([file]);
-				}
-			}
-		}
-	}
-
-	async function addFiles(files) {
-		showErrorModal = false;
-		const maxSizeInBytes = 500 * 1024; // 500 KB
-		const allowedTypes = ['image/jpeg', 'image/png', 'image/gif'];
-		const filePromises = [];
-
-		for (let i = 0; i < files.length; i++) {
-			const file = files[i];
-
-			// Valider filstørrelse
-			if (file.size > maxSizeInBytes) {
-				errorMessage = `Filen er for stor. Maksimal filstørrelse er 500 KB.`;
-				showErrorModal = true;
-				continue;
-			}
-
-			// Valider filtype
-			if (!allowedTypes.includes(file.type)) {
-				errorMessage = `Kun JPG, PNG og GIF billeder er tilladt. Filen ${file.name} er ugyldig.`;
-				showErrorModal = true;
-				continue;
-			}
-
-			const filePromise = new Promise((resolve, reject) => {
-				const reader = new FileReader();
-				reader.onload = function (e) {
-					const base64Data = e.target.result.split(',')[1];
-					resolve(base64Data);
-				};
-				reader.onerror = function () {
-					reject(new Error(`Fejl ved læsning af fil: ${file.name}`));
-				};
-				reader.readAsDataURL(file);
-			});
-
-			filePromises.push(filePromise);
-		}
-
-		try {
-			const newImages = await Promise.all(filePromises);
-			images = [...images, ...newImages];
-		} catch (error) {
-			console.error(error);
-			alert('Der opstod en fejl under upload af billeder.');
-		}
-	}
-
-	function removeImage(index) {
-		images.splice(index, 1);
-		images = [...images];
+	function setErrorMessage(message) {
+		errorMessage = message;
+		showErrorModal = true;
 	}
 
 	function handleCreateReport() {
@@ -93,19 +28,22 @@
 			content: content.trim(),
 			user_id: user.id,
 			report_type_id: reportType,
-			images
+			images: $images
 		};
 
 		socket.emit('new report', newReport);
 		content = '';
-		images = [];
+		images.set([]);
 	}
 </script>
 
-<div class="max-w-3xl mx-auto" on:paste={handlePaste}>
+<div
+	class="max-w-3xl mx-auto"
+	on:paste={(e) => handlePaste(e, (files) => addFiles(files, images, setErrorMessage))}
+>
 	<!-- ErrorModal -->
 	<ErrorModal message={errorMessage} show={showErrorModal} />
-	
+
 	<h2 class="text-4xl font-semibold text-center my-6">{reportTitle}</h2>
 
 	<form on:submit|preventDefault={handleCreateReport} class="relative">
@@ -124,7 +62,8 @@
 					<input
 						type="file"
 						id="file-input"
-						on:change={handleFileChange}
+						on:change={(e) =>
+							handleFileChange(e, (files) => addFiles(files, images, setErrorMessage))}
 						accept="image/*"
 						multiple
 						class="hidden"
@@ -139,9 +78,9 @@
 			</div>
 		</div>
 
-		{#if images.length > 0}
+		{#if $images.length > 0}
 			<div class="mt-4 grid grid-cols-3 gap-4">
-				{#each images as image, index}
+				{#each $images as image, index}
 					<div class="relative">
 						<img
 							src={`data:image/*;base64,${image}`}
@@ -151,7 +90,7 @@
 						<button
 							type="button"
 							class="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1"
-							on:click={() => removeImage(index)}
+							on:click={() => removeImage(index, images)}
 							title="Fjern billede"
 						>
 							&times;
