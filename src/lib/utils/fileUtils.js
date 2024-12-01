@@ -3,6 +3,7 @@ export async function handleFileChange(event, addFiles) {
     if (files.length > 0) {
       await addFiles(files);
     }
+    event.target.value = '';
   }
   
   export async function handlePaste(event, addFiles) {

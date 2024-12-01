@@ -19,6 +19,8 @@
 	$: user = $page.data.user;
 
 	function setErrorMessage(message) {
+		errorMessage = '';
+		showErrorModal = false;
 		errorMessage = message;
 		showErrorModal = true;
 	}
