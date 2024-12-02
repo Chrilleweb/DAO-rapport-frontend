@@ -4,7 +4,7 @@
 	import ConfirmationModal from '../../lib/components/ui/ConfirmationModal.svelte';
 	import { page } from '$app/stores';
 	import ErrorAdmin from '../../lib/components/errorPages/ErrorAdmin.svelte';
-
+	import Spinner from '$lib/components/ui/Spinner.svelte';
 	let users = [];
 	let errorMessage = '';
 	let successMessage = '';
@@ -14,11 +14,15 @@
 	let modalMessage = '';
 	let showModal = false;
 
+	let isDataLoaded = false;
+
 	$: user = $page.data.user;
 
 	onMount(async () => {
+		isDataLoaded = false;
 		try {
 			users = await fetchAllUsers();
+			isDataLoaded = true;
 		} catch (error) {
 			errorMessage = error.message;
 		}
@@ -84,7 +88,11 @@
 
 <div class="max-w-7xl mx-auto p-8 pl-52 items-center">
 	{#if user.role !== 'admin'}
-	<ErrorAdmin />
+		<ErrorAdmin />
+	{:else if !isDataLoaded}
+		<div class="flex items-center justify-center h-[35rem]">
+			<Spinner />
+		</div>
 	{:else}
 		<h1 class="text-4xl font-bold text-center mb-8 text-HeaderBg">Administrationspanel</h1>
 
