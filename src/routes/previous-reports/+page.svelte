@@ -17,7 +17,7 @@
 	const reports = writable([]);
 	const comments = writable({});
 	let newCommentContent = {};
-	let newCommentImages = writable({});  // Tilføjet til at håndtere billeder i nye kommentarer
+	let newCommentImages = writable({}); // Tilføjet til at håndtere billeder i nye kommentarer
 	let isDataLoaded = false;
 
 	$: user = $page.data.user;
@@ -195,20 +195,18 @@
 	}
 	// For comment images
 	function handleCommentFileChange(event, reportId) {
-    handleFileChange(event, (files) =>
-        addFiles(files, newCommentImages, setErrorMessage, reportId)
-    );
-}
+		handleFileChange(event, (files) =>
+			addFiles(files, newCommentImages, setErrorMessage, reportId)
+		);
+	}
 
-function handleCommentPaste(event, reportId) {
-    handlePaste(event, (files) =>
-        addFiles(files, newCommentImages, setErrorMessage, reportId)
-    );
-}
+	function handleCommentPaste(event, reportId) {
+		handlePaste(event, (files) => addFiles(files, newCommentImages, setErrorMessage, reportId));
+	}
 
-function removeCommentImage(index, reportId) {
-    removeImage(index, newCommentImages, reportId);
-}
+	function removeCommentImage(index, reportId) {
+		removeImage(index, newCommentImages, reportId);
+	}
 
 	function requestReports() {
 		showErrorModal = false;
@@ -410,13 +408,19 @@ function removeCommentImage(index, reportId) {
 			const reportType = uniqueReportTypes.length > 1 ? 'Samlet' : uniqueReportTypes[0];
 			generateStandardPDF(reportsData, reportType);
 		} else {
-			errorMessage = 'Ingen rapporter tilgængelige for download.';
+			errorMessage = 'Ingen rapporter tilgængelige for den valgte periode.';
 			showErrorModal = true;
 		}
 	}
 
 	async function downloadPDFWithAI() {
 		showErrorModal = false;
+
+		if (!$reports || $reports.length === 0) {
+			errorMessage = 'Ingen rapporter tilgængelige for den valgte periode.';
+			showErrorModal = true;
+			return;
+		}
 		try {
 			isLoading = true;
 
