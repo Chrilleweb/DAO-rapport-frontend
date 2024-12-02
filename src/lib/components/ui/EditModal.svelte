@@ -67,6 +67,7 @@
 		if (files.length > 0) {
 			addFiles(files);
 		}
+		event.target.value = ''; // Nulstil input for at tillade samme fil at blive valgt igen
 	}
 
 	async function handlePaste(event) {
