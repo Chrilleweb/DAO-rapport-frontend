@@ -12,11 +12,12 @@
 	import Loader from '$lib/components/ui/Loader.svelte';
 	import ErrorModal from '$lib/components/ui/ErrorModal.svelte';
 	import Spinner from '$lib/components/ui/Spinner.svelte';
+	import { handleFileChange, handlePaste, addFiles, removeImage } from '$lib/utils/fileUtils.js';
 
 	const reports = writable([]);
 	const comments = writable({});
 	let newCommentContent = {};
-	let newCommentImages = {}; // Tilføjet til at håndtere billeder i nye kommentarer
+	let newCommentImages = writable({});  // Tilføjet til at håndtere billeder i nye kommentarer
 	let isDataLoaded = false;
 
 	$: user = $page.data.user;
@@ -160,7 +161,7 @@
 
 	function submitNewComment(reportId) {
 		const content = newCommentContent[reportId]?.trim();
-		const images = newCommentImages[reportId] || [];
+		const images = $newCommentImages[reportId] || [];
 
 		showErrorModal = false;
 		if (!content) {
@@ -179,80 +180,35 @@
 
 		// Ryd tekst og billeder efter afsendelse
 		newCommentContent[reportId] = '';
-		newCommentImages[reportId] = [];
+		newCommentImages.update((currentImagesObj) => {
+			const updatedImages = { ...currentImagesObj };
+			delete updatedImages[reportId];
+			return updatedImages;
+		});
 	}
 
-	function handleCommentFileChange(event, reportId) {
-		const files = event.target.files;
-		if (files.length > 0) {
-			addCommentFiles(files, reportId);
-		}
-	}
-
-	async function handleCommentPaste(event, reportId) {
-		const clipboardItems = event.clipboardData.items;
-
-		for (const item of clipboardItems) {
-			if (item.type.startsWith('image/')) {
-				const file = item.getAsFile();
-				if (file) {
-					await addCommentFiles([file], reportId);
-				}
-			}
-		}
-	}
-
-	async function addCommentFiles(files, reportId) {
+	function setErrorMessage(message) {
+		errorMessage = '';
 		showErrorModal = false;
-		const maxSizeInBytes = 500 * 1024; // 500 KB
-		const allowedTypes = ['image/jpeg', 'image/png', 'image/gif'];
-		const filePromises = [];
-
-		for (let i = 0; i < files.length; i++) {
-			const file = files[i];
-
-			// Valider filstørrelse
-			if (file.size > maxSizeInBytes) {
-				errorMessage = `Filen er for stor. Maksimal filstørrelse er 500 KB.`;
-				showErrorModal = true;
-				continue;
-			}
-
-			// Valider filtype
-			if (!allowedTypes.includes(file.type)) {
-				errorMessage = `Kun JPG, PNG og GIF billeder er tilladt. Filen ${file.name} er ugyldig.`;
-				showErrorModal = true;
-				continue;
-			}
-
-			const filePromise = new Promise((resolve, reject) => {
-				const reader = new FileReader();
-				reader.onload = function (e) {
-					const base64Data = e.target.result.split(',')[1];
-					resolve(base64Data);
-				};
-				reader.onerror = function () {
-					reject(new Error(`Fejl ved læsning af fil: ${file.name}`));
-				};
-				reader.readAsDataURL(file);
-			});
-
-			filePromises.push(filePromise);
-		}
-
-		try {
-			const newImages = await Promise.all(filePromises);
-			newCommentImages[reportId] = [...(newCommentImages[reportId] || []), ...newImages];
-		} catch (error) {
-			console.error(error);
-			alert('Der opstod en fejl under upload af billeder.');
-		}
+		errorMessage = message;
+		showErrorModal = true;
 	}
+	// For comment images
+	function handleCommentFileChange(event, reportId) {
+    handleFileChange(event, (files) =>
+        addFiles(files, newCommentImages, setErrorMessage, reportId)
+    );
+}
 
-	function removeCommentImage(reportId, index) {
-		newCommentImages[reportId].splice(index, 1);
-		newCommentImages = { ...newCommentImages };
-	}
+function handleCommentPaste(event, reportId) {
+    handlePaste(event, (files) =>
+        addFiles(files, newCommentImages, setErrorMessage, reportId)
+    );
+}
+
+function removeCommentImage(index, reportId) {
+    removeImage(index, newCommentImages, reportId);
+}
 
 	function requestReports() {
 		if (startDate && endDate) {
@@ -709,9 +665,9 @@
 									</div>
 
 									<!-- Forhåndsvisning af billeder -->
-									{#if newCommentImages[report.id]?.length > 0}
+									{#if $newCommentImages[report.id]?.length > 0}
 										<div class="mt-4 grid grid-cols-3 gap-4">
-											{#each newCommentImages[report.id] as image, index}
+											{#each $newCommentImages[report.id] as image, index}
 												<div class="relative">
 													<img
 														src={`data:image/*;base64,${image.image_data || image}`}
@@ -721,7 +677,7 @@
 													<button
 														type="button"
 														class="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1"
-														on:click={() => removeCommentImage(report.id, index)}
+														on:click={() => removeCommentImage(index, report.id)}
 														title="Fjern billede"
 													>
 														&times;

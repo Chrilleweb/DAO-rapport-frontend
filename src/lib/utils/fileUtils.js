@@ -18,7 +18,7 @@ export async function handleFileChange(event, addFiles) {
     }
   }
   
-  export async function addFiles(files, images, setErrorMessage) {
+  export async function addFiles(files, store, setErrorMessage, reportId = null) {
     const maxSizeInBytes = 500 * 1024; // 500 KB
     const allowedTypes = ['image/jpeg', 'image/png', 'image/gif'];
     const filePromises = [];
@@ -26,13 +26,13 @@ export async function handleFileChange(event, addFiles) {
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
   
-      // Valider filstørrelse
+      // Validate file size
       if (file.size > maxSizeInBytes) {
         setErrorMessage(`Filen er for stor. Maksimal filstørrelse er 500 KB.`);
         continue;
       }
   
-      // Valider filtype
+      // Validate file type
       if (!allowedTypes.includes(file.type)) {
         setErrorMessage(`Kun JPG, PNG og GIF billeder er tilladt. Filen ${file.name} er ugyldig.`);
         continue;
@@ -55,17 +55,40 @@ export async function handleFileChange(event, addFiles) {
   
     try {
       const newImages = await Promise.all(filePromises);
-      images.update((currentImages) => [...currentImages, ...newImages]);
+      store.update((currentImages) => {
+        if (reportId !== null) {
+          // For comments, update the images object with reportId as key
+          return {
+            ...currentImages,
+            [reportId]: [
+              ...(currentImages[reportId] || []),
+              ...newImages,
+            ],
+          };
+        } else {
+          // For general images, update the images array
+          return [...currentImages, ...newImages];
+        }
+      });
     } catch (error) {
       console.error(error);
       alert('Der opstod en fejl under upload af billeder.');
     }
   }
   
-  export function removeImage(index, images) {
-    images.update((currentImages) => {
-      currentImages.splice(index, 1);
-      return [...currentImages];
+  export function removeImage(index, store, reportId = null) {
+    store.update((currentImages) => {
+      if (reportId !== null) {
+        const imagesForReport = currentImages[reportId] || [];
+        imagesForReport.splice(index, 1);
+        return {
+          ...currentImages,
+          [reportId]: imagesForReport,
+        };
+      } else {
+        currentImages.splice(index, 1);
+        return [...currentImages];
+      }
     });
   }
   

@@ -10,6 +10,7 @@
 	import { faEdit, faPaperclip, faArrowRight } from '@fortawesome/free-solid-svg-icons';
 	import ImageModal from '$lib/components/ui/ImageModal.svelte';
 	import Spinner from '$lib/components/ui/Spinner.svelte';
+	import { handleFileChange, handlePaste, addFiles, removeImage } from '$lib/utils/fileUtils.js';
 
 	let reportContent = '';
 	let scheduledDateTime = '';
@@ -30,7 +31,7 @@
 
 	let selectedReportTypeId = reportTypeOptions[0].id;
 
-	let images = []; // For storing images when creating a scheduled report
+	let images = writable([]); // For storing images when creating a scheduled report
 
 	let scheduledReports = [];
 	let isEditing = false;
@@ -49,7 +50,7 @@
 	// Kommentarer for planlagte rapporter som en writable store
 	let scheduleReportComments = writable({});
 	let newScheduleReportCommentContent = {};
-	let newScheduleReportCommentImages = {};
+	let newScheduleReportCommentImages = writable({});
 
 	// Image modal state
 	let showImageModal = false;
@@ -65,80 +66,41 @@
 		currentImageSrc = '';
 	}
 
-	function handleFileChange(event) {
-		const files = event.target.files;
-		if (files.length > 0) {
-			addFiles(files);
-		}
-	}
-
-	async function handlePaste(event, context = { type: 'report', reportId: null }) {
-		const clipboardItems = event.clipboardData.items;
-
-		for (const item of clipboardItems) {
-			if (item.type.startsWith('image/')) {
-				const file = item.getAsFile();
-				if (file) {
-					if (context.type === 'report') {
-						addFiles([file]); // Tilføj til planlagt rapport
-					} else if (context.type === 'comment') {
-						addCommentFiles([file], context.reportId); // Tilføj til kommentar
-					}
-				}
-			}
-		}
-	}
-
-	async function addFiles(files) {
+	function setErrorMessage(message) {
+		errorMessage = '';
 		showErrorModal = false;
-		const maxSizeInBytes = 500 * 1024; // 500 KB
-		const allowedTypes = ['image/jpeg', 'image/png', 'image/gif'];
-		const filePromises = [];
-
-		for (let i = 0; i < files.length; i++) {
-			const file = files[i];
-
-			// Validate file size
-			if (file.size > maxSizeInBytes) {
-				errorMessage = `Filen er for stor. Maksimal filstørrelse er 500 KB.`;
-				showErrorModal = true;
-				continue;
-			}
-
-			// Validate file type
-			if (!allowedTypes.includes(file.type)) {
-				errorMessage = `Kun JPG, PNG og GIF billeder er tilladt. Filen ${file.name} er ugyldig.`;
-				showErrorModal = true;
-				continue;
-			}
-
-			const filePromise = new Promise((resolve, reject) => {
-				const reader = new FileReader();
-				reader.onload = function (e) {
-					const base64Data = e.target.result.split(',')[1];
-					resolve(base64Data);
-				};
-				reader.onerror = function () {
-					reject(new Error(`Fejl ved læsning af fil: ${file.name}`));
-				};
-				reader.readAsDataURL(file);
-			});
-
-			filePromises.push(filePromise);
-		}
-
-		try {
-			const newImages = await Promise.all(filePromises);
-			images = [...images, ...newImages];
-		} catch (error) {
-			console.error(error);
-			alert('Der opstod en fejl under upload af billeder.');
-		}
+		errorMessage = message;
+		showErrorModal = true;
 	}
 
-	function removeImage(index) {
-		images.splice(index, 1);
-		images = [...images];
+	// For report images
+	function handleReportFileChange(event) {
+		handleFileChange(event, (files) => addFiles(files, images, setErrorMessage));
+	}
+
+	function handleReportPaste(event) {
+		handlePaste(event, (files) => addFiles(files, images, setErrorMessage));
+	}
+
+	function removeReportImage(index) {
+		removeImage(index, images);
+	}
+
+	// For comment images
+	function handleCommentFileChange(event, reportId) {
+		handleFileChange(event, (files) =>
+			addFiles(files, newScheduleReportCommentImages, setErrorMessage, reportId)
+		);
+	}
+
+	function handleCommentPaste(event, reportId) {
+		handlePaste(event, (files) =>
+			addFiles(files, newScheduleReportCommentImages, setErrorMessage, reportId)
+		);
+	}
+
+	function removeCommentImage(index, reportId) {
+		removeImage(index, newScheduleReportCommentImages, reportId);
 	}
 
 	function submitScheduledReport() {
@@ -147,12 +109,12 @@
 			content: reportContent.trim(),
 			scheduled_time: scheduledDateTime,
 			report_type_id: selectedReportTypeId,
-			images
+			images: $images
 		});
 		// Reset the form
 		reportContent = '';
 		scheduledDateTime = '';
-		images = [];
+		images.set([]);
 	}
 
 	function openEditModal(item, type) {
@@ -227,84 +189,9 @@
 		closeEditModal();
 	}
 
-	function handleCommentFileChange(event, reportId) {
-		const files = event.target.files;
-		if (files.length > 0) {
-			addCommentFiles(files, reportId);
-		}
-	}
-
-	async function handleCommentPaste(event, reportId) {
-		const clipboardItems = event.clipboardData.items;
-
-		for (const item of clipboardItems) {
-			if (item.type.startsWith('image/')) {
-				const file = item.getAsFile();
-				if (file) {
-					await addCommentFiles([file], reportId);
-				}
-			}
-		}
-	}
-
-	async function addCommentFiles(files, reportId) {
-		showErrorModal = false;
-		const maxSizeInBytes = 500 * 1024; // 500 KB
-		const allowedTypes = ['image/jpeg', 'image/png', 'image/gif'];
-		const filePromises = [];
-
-		for (let i = 0; i < files.length; i++) {
-			const file = files[i];
-
-			// Valider filstørrelse
-			if (file.size > maxSizeInBytes) {
-				errorMessage = `Filen er for stor. Maksimal filstørrelse er 500 KB.`;
-				showErrorModal = true;
-				continue;
-			}
-
-			// Valider filtype
-			if (!allowedTypes.includes(file.type)) {
-				errorMessage = `Kun JPG, PNG og GIF billeder er tilladt. Filen er ugyldig.`;
-				showErrorModal = true;
-				continue;
-			}
-
-			const filePromise = new Promise((resolve, reject) => {
-				const reader = new FileReader();
-				reader.onload = function (e) {
-					const base64Data = e.target.result.split(',')[1];
-					resolve(base64Data);
-				};
-				reader.onerror = function () {
-					reject(new Error(`Fejl ved læsning af fil: ${file.name}`));
-				};
-				reader.readAsDataURL(file);
-			});
-
-			filePromises.push(filePromise);
-		}
-
-		try {
-			const newImages = await Promise.all(filePromises);
-			newScheduleReportCommentImages[reportId] = [
-				...(newScheduleReportCommentImages[reportId] || []),
-				...newImages
-			];
-		} catch (error) {
-			console.error(error);
-			alert('Der opstod en fejl under upload af billeder.');
-		}
-	}
-
-	function removeCommentImage(reportId, index) {
-		newScheduleReportCommentImages[reportId].splice(index, 1);
-		newScheduleReportCommentImages = { ...newScheduleReportCommentImages };
-	}
-
 	function submitNewScheduleReportComment(reportId) {
 		const content = newScheduleReportCommentContent[reportId]?.trim();
-		const images = newScheduleReportCommentImages[reportId] || [];
+		const images = $newScheduleReportCommentImages[reportId] || [];
 
 		showErrorModal = false;
 		if (!content) {
@@ -323,7 +210,11 @@
 
 		// Ryd tekst og billeder efter afsendelse
 		newScheduleReportCommentContent[reportId] = '';
-		newScheduleReportCommentImages[reportId] = [];
+		newScheduleReportCommentImages.update((currentImagesObj) => {
+			const updatedImages = { ...currentImagesObj };
+			delete updatedImages[reportId];
+			return updatedImages;
+		});
 	}
 
 	function handleDeleteScheduledReport() {
@@ -495,8 +386,12 @@
 			hour12: false
 		});
 		const parts = formatter.formatToParts(now);
-		const datePart = `${parts.find((part) => part.type === 'year').value}-${parts.find((part) => part.type === 'month').value}-${parts.find((part) => part.type === 'day').value}`;
-		const timePart = `${parts.find((part) => part.type === 'hour').value}:${parts.find((part) => part.type === 'minute').value}`;
+		const datePart = `${parts.find((part) => part.type === 'year').value}-${
+			parts.find((part) => part.type === 'month').value
+		}-${parts.find((part) => part.type === 'day').value}`;
+		const timePart = `${parts.find((part) => part.type === 'hour').value}:${
+			parts.find((part) => part.type === 'minute').value
+		}`;
 		return `${datePart}T${timePart}`;
 	}
 </script>
@@ -519,7 +414,7 @@
 				bind:value={reportContent}
 				placeholder="Planlæg din rapport her..."
 				class="w-full h-28 p-4 bg-[#ECE0D1] rounded-lg placeholder-gray-600 text-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-400 pr-14"
-				on:paste={(e) => handlePaste(e, { type: 'report' })}
+				on:paste={handleReportPaste}
 				required
 			></textarea>
 			<div class="absolute right-4 bottom-4 flex gap-2 items-center">
@@ -528,7 +423,7 @@
 					<input
 						type="file"
 						id="file-input"
-						on:change={handleFileChange}
+						on:change={handleReportFileChange}
 						accept="image/*"
 						multiple
 						class="hidden"
@@ -543,9 +438,9 @@
 			</div>
 		</div>
 
-		{#if images.length > 0}
+		{#if $images.length > 0}
 			<div class="mt-4 grid grid-cols-3 gap-4">
-				{#each images as image, index}
+				{#each $images as image, index}
 					<div class="relative">
 						<img
 							src={`data:image/*;base64,${image}`}
@@ -555,7 +450,7 @@
 						<button
 							type="button"
 							class="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1"
-							on:click={() => removeImage(index)}
+							on:click={() => removeReportImage(index)}
 							title="Fjern billede"
 						>
 							&times;
@@ -714,7 +609,7 @@
 											class="w-full h-28 p-4 bg-white rounded-lg placeholder-gray-600 text-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-400 pr-14"
 											bind:value={newScheduleReportCommentContent[report.id]}
 											placeholder="Skriv en kommentar..."
-											on:paste={(e) => handlePaste(e, { type: 'comment', reportId: report.id })}
+											on:paste={(e) => handleCommentPaste(e, report.id)}
 										></textarea>
 										<div class="absolute right-4 bottom-4 flex gap-2 items-center">
 											<!-- Attach icon -->
@@ -744,9 +639,9 @@
 									</div>
 
 									<!-- Preview images -->
-									{#if newScheduleReportCommentImages[report.id]?.length > 0}
+									{#if $newScheduleReportCommentImages[report.id]?.length > 0}
 										<div class="mt-4 grid grid-cols-3 gap-4">
-											{#each newScheduleReportCommentImages[report.id] as image, index}
+											{#each $newScheduleReportCommentImages[report.id] as image, index}
 												<div class="relative">
 													<img
 														src={`data:image/*;base64,${image.image_data || image}`}
@@ -756,7 +651,7 @@
 													<button
 														type="button"
 														class="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1"
-														on:click={() => removeCommentImage(report.id, index)}
+														on:click={() => removeCommentImage(index, report.id)}
 														title="Fjern billede"
 													>
 														&times;
