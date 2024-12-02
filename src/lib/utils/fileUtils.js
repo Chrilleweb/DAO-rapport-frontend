@@ -72,7 +72,7 @@ export async function handleFileChange(event, addFiles) {
       });
     } catch (error) {
       console.error(error);
-      alert('Der opstod en fejl under upload af billeder.');
+      setErrorMessage('Der skete en fejl ved tilføjelse af filer.');
     }
   }
   
