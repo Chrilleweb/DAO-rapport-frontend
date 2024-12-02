@@ -211,6 +211,7 @@ function removeCommentImage(index, reportId) {
 }
 
 	function requestReports() {
+		showErrorModal = false;
 		if (startDate && endDate) {
 			const startDateObj = new Date(startDate);
 			const endDateObj = new Date(endDate);
@@ -230,7 +231,8 @@ function removeCommentImage(index, reportId) {
 				endDate: formattedEndDate
 			});
 		} else {
-			alert('Vælg venligst både start- og slutdato/tid.');
+			errorMessage = 'Start- og slutdato skal udfyldes.';
+			showErrorModal = true;
 		}
 	}
 
@@ -414,6 +416,7 @@ function removeCommentImage(index, reportId) {
 	}
 
 	async function downloadPDFWithAI() {
+		showErrorModal = false;
 		try {
 			isLoading = true;
 
@@ -439,7 +442,8 @@ function removeCommentImage(index, reportId) {
 			generateAIPDF(processedData, reportType);
 		} catch (error) {
 			console.error('Fejl ved generering af PDF med AI:', error);
-			alert('Der opstod en fejl ved generering af PDF med AI.');
+			errorMessage = 'Der opstod en fejl ved generering af PDF med AI.';
+			showErrorModal = true;
 		} finally {
 			isLoading = false;
 		}

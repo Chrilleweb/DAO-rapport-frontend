@@ -126,7 +126,8 @@
 			imagesToAdd = [...imagesToAdd, ...newImages];
 		} catch (error) {
 			console.error(error);
-			alert('Der opstod en fejl under upload af billeder.');
+			errorMessage = 'Der opstod en fejl ved tilføjelse af billeder.';
+			showErrorModal = true;
 		}
 	}
 
