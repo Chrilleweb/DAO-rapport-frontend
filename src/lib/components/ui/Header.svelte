@@ -1,6 +1,6 @@
 <script>
 	import { FontAwesomeIcon } from '@fortawesome/svelte-fontawesome';
-	import { faTruck, faNewspaper, faSignOutAlt, faBox, faFlag, faUserTie, faCogs, faUserPlus, faBackward, faCalendarDays, faServer } from '@fortawesome/free-solid-svg-icons';
+	import { faUser, faTruck, faNewspaper, faSignOutAlt, faBox, faFlag, faUserTie, faCogs, faUserPlus, faBackward, faCalendarDays, faServer } from '@fortawesome/free-solid-svg-icons';
 	import { logoutUser } from '$lib/api/auth';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
@@ -48,8 +48,11 @@
 					</a>
 				{/if}
 			{/each}
-		</nav>		
-
+		</nav>
+		<div class="flex items-center space-x-2 mt-4 p-2 bg-toggleBg rounded shadow">
+			<FontAwesomeIcon icon={faUser} class="h-5 w-5 text-white" />
+			<span class="text-white font-medium text-xs">{user.firstname} {user.lastname}</span>
+		</div>
 		<button
 			on:click={handleLogout}
 			class="text-white p-2 rounded hover:bg-toggleBg flex items-center space-x-2 mt-auto"
