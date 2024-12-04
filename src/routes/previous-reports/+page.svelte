@@ -47,7 +47,7 @@
 		currentImageSrc = '';
 	}
 
-	let reportTypeOptionsDisplay = [
+	let reportTypeOptions = [
 		{ label: 'Alle', ids: [1, 2, 3, 4, 5] },
 		{ label: 'UBD', ids: [2] },
 		{ label: 'Pakkeshop', ids: [4] },
@@ -58,19 +58,49 @@
 		{ label: 'IT', ids: [8] }
 	];
 
-	let reportTypeOptions = [
-		{ label: 'Alle', id: 1 },
-		{ label: 'UBD', id: 2 },
-		{ label: 'Pakkeshop', id: 4 },
-		{ label: 'Indhentning', id: 3 },
-		{ label: 'Ledelse', id: 5 },
-		{ label: 'EKL', id: 6 },
-		{ label: 'Transport', id: 7 },
-		{ label: 'IT', id: 8 }
-	];
+	// Initialiserer med 'Alle' valgt
+	let selectedReportTypeLabels = ['Alle'];
 
-	let selectedReportTypeIndex = 0; // Default to 'Alle'
-	$: reportTypeIds = reportTypeOptionsDisplay[selectedReportTypeIndex].ids;
+	function toggleReportTypeSelection(label) {
+    isDataLoaded = false; // Start loading state
+
+    if (label === 'Alle') {
+        // Hvis "Alle" allerede er valgt, gør intet
+        if (selectedReportTypeLabels.length === 1 && selectedReportTypeLabels.includes('Alle')) {
+            isDataLoaded = true; // Stop loading state
+            return;
+        }
+        // Hvis "Alle" vælges, fjern alle andre labels og vælg kun "Alle"
+        selectedReportTypeLabels = ['Alle'];
+    } else {
+        // Fjern "Alle", hvis en specifik type vælges
+        selectedReportTypeLabels = selectedReportTypeLabels.filter((l) => l !== 'Alle');
+
+        if (selectedReportTypeLabels.includes(label)) {
+            // Fjern label, hvis den allerede er valgt
+            selectedReportTypeLabels = selectedReportTypeLabels.filter((l) => l !== label);
+        } else {
+            // Tilføj label, hvis den ikke allerede er valgt
+            selectedReportTypeLabels = [...selectedReportTypeLabels, label];
+        }
+
+        // Hvis listen bliver tom, sæt "Alle" som valgt
+        if (selectedReportTypeLabels.length === 0) {
+            selectedReportTypeLabels = ['Alle'];
+        }
+    }
+
+    isDataLoaded = true; // Stop loading state
+}
+
+	// Opdaterer selectedReportTypeIds baseret på selectedReportTypeLabels
+	$: selectedReportTypeIds = selectedReportTypeLabels.reduce((ids, label) => {
+		const option = reportTypeOptions.find((opt) => opt.label === label);
+		if (option) {
+			return [...ids, ...option.ids];
+		}
+		return ids;
+	}, []);
 
 	let startDate;
 	let endDate;
@@ -224,7 +254,7 @@
 			const formattedEndDate = endDateUTC.toISOString().replace('T', ' ').slice(0, 19);
 
 			socket.emit('get reports dates', {
-				reportTypeIds,
+				reportTypeIds: selectedReportTypeIds.length ? [...new Set(selectedReportTypeIds)] : [],
 				startDate: formattedStartDate,
 				endDate: formattedEndDate
 			});
@@ -279,7 +309,7 @@
 		socket.on('new report', (newReport) => {
 			const reportTypeId = Number(newReport.report_type_id);
 			const userId = Number(newReport.user_id);
-			if (reportTypeIds.includes(reportTypeId)) {
+			if (selectedReportTypeIds.includes(reportTypeId)) {
 				reports.update((currentReports) => [
 					{ ...newReport, report_type_id: reportTypeId, user_id: userId },
 					...currentReports
@@ -436,7 +466,7 @@
 			const formattedEndDate = endDateUTC.toISOString().replace('T', ' ').slice(0, 19);
 
 			const processedData = await processReportsWithAIDate(
-				reportTypeIds,
+				selectedReportTypeIds,
 				formattedStartDate,
 				formattedEndDate
 			);
@@ -453,8 +483,8 @@
 		}
 	}
 
-	// Kald requestReports, når reportTypeIds ændres
-	$: if (reportTypeIds) {
+	// Kald requestReports, når selectedReportTypeIds ændres
+	$: if (selectedReportTypeIds) {
 		requestReports();
 	}
 
@@ -475,18 +505,26 @@
 	<h2 class="text-4xl font-semibold text-center my-6">Tidligere rapporter</h2>
 
 	<!-- Rapporttype Vælger -->
-	<div class="mb-4">
-		<label for="report-type" class="block text-gray-700 font-semibold mb-2">Vælg rapporttype:</label
-		>
-		<select
-			id="report-type"
-			bind:value={selectedReportTypeIndex}
-			class="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-		>
-			{#each reportTypeOptionsDisplay as option, index}
-				<option value={index}>{option.label}</option>
+	<div class="mb-6">
+		<label for="report-type" class="block text-lg font-semibold text-gray-800 mb-4">
+			Vælg rapporttyper:
+		</label>
+		<div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+			{#each reportTypeOptions as option}
+				<label
+					class="flex items-center space-x-3 bg-white border border-gray-300 rounded-lg shadow-sm p-3 cursor-pointer transition hover:shadow-md focus-within:ring focus-within:ring-blue-300"
+				>
+					<input
+						type="checkbox"
+						value={option.label}
+						checked={selectedReportTypeLabels.includes(option.label)}
+						on:change={() => toggleReportTypeSelection(option.label)}
+						class="form-checkbox h-5 w-5 text-blue-500 rounded-md focus:ring focus:ring-blue-300"
+					/>
+					<span class="text-sm font-medium text-gray-700">{option.label}</span>
+				</label>
 			{/each}
-		</select>
+		</div>
 	</div>
 	<div class="flex justify-between items-center mb-4">
 		<!-- Dato- og tidsvælgere -->
