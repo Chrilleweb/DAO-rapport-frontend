@@ -48,7 +48,7 @@
 	}
 
 	let reportTypeOptions = [
-		{ label: 'Alle', ids: [1, 2, 3, 4, 5] },
+		{ label: 'Alle', ids: [1, 2, 3, 4, 5, 6, 7, 8] },
 		{ label: 'UBD', ids: [2] },
 		{ label: 'Pakkeshop', ids: [4] },
 		{ label: 'Indhentning', ids: [3] },
