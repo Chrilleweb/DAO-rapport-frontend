@@ -47,7 +47,7 @@
 		currentImageSrc = '';
 	}
 
-	let reportTypeOptions = [
+	let reportTypeOptionsArray = [
 		{ label: 'Alle', ids: [1, 2, 3, 4, 5, 6, 7, 8] },
 		{ label: 'UBD', ids: [2] },
 		{ label: 'Pakkeshop', ids: [4] },
@@ -56,6 +56,17 @@
 		{ label: 'EKL', ids: [6] },
 		{ label: 'Transport', ids: [7] },
 		{ label: 'IT', ids: [8] }
+	];
+
+	let reportTypeOptions = [
+		{ label: 'Alle', id: 1 },
+		{ label: 'UBD', id: 2 },
+		{ label: 'Pakkeshop', id: 4 },
+		{ label: 'Indhentning', id: 3 },
+		{ label: 'Ledelse', id: 5 },
+		{ label: 'EKL', id: 6 },
+		{ label: 'Transport', id: 7 },
+		{ label: 'IT', id: 8 }
 	];
 
 	// Initialiserer med 'Alle' valgt
@@ -95,7 +106,7 @@
 
 	// Opdaterer selectedReportTypeIds baseret på selectedReportTypeLabels
 	$: selectedReportTypeIds = selectedReportTypeLabels.reduce((ids, label) => {
-		const option = reportTypeOptions.find((opt) => opt.label === label);
+		const option = reportTypeOptionsArray.find((opt) => opt.label === label);
 		if (option) {
 			return [...ids, ...option.ids];
 		}
@@ -510,7 +521,7 @@
 			Vælg rapporttyper:
 		</label>
 		<div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-			{#each reportTypeOptions as option}
+			{#each reportTypeOptionsArray as option}
 				<label
 					class="flex items-center space-x-3 bg-white border border-gray-300 rounded-lg shadow-sm p-3 cursor-pointer transition hover:shadow-md focus-within:ring focus-within:ring-blue-300"
 				>

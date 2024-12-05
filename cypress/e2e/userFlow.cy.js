@@ -4,21 +4,19 @@ describe('Brugerflow: Login og rapporthåndtering', () => {
       cy.login('test@mail.com', 'testpassword!');
     });
   
-    it('Opretter en rapport', () => {
+    it('Userflow opret rapport felt, kommentarer og rediger', () => {
+
       // Efter login bør vi være på siden, hvor vi kan oprette rapporter
   
       // Indtast i tekstområdet for rapportindhold
       cy.get('textarea[id="content"]').type('Dette er en test rapport', { delay: 100 });
   
       // Klik på 'Opret Rapport' knappen
-      cy.contains('Opret Rapport').click();
+      cy.get('button[type="submit"]').click();
   
       // Bekræft, at rapporten vises i rapportlisten
       cy.contains('Dette er en test rapport').should('exist');
-    });
-  
-    it('Opdaterer en rapport', () => {
-      // Find den rapport, vi lige har oprettet
+
       cy.contains('Dette er en test rapport')
         .parents('li') // Naviger op til <li> elementet
         .within(() => {
@@ -37,10 +35,7 @@ describe('Brugerflow: Login og rapporthåndtering', () => {
   
       // Bekræft, at rapportindholdet er opdateret
       cy.contains('Dette er en opdateret rapport').should('exist');
-    });
-  
-    it('Opretter en kommentar til en rapport', () => {
-      // Find den rapport, vi vil kommentere på
+
       cy.contains('Dette er en opdateret rapport')
         .parents('li')
         .within(() => {
@@ -48,14 +43,11 @@ describe('Brugerflow: Login og rapporthåndtering', () => {
           cy.get('textarea[placeholder="Skriv en kommentar..."]').type('Dette er en test kommentar', { delay: 100 });
   
           // Klik på 'Tilføj kommentar' knappen
-          cy.contains('Tilføj kommentar').click();
+          cy.get('button[type="button"]').click();
         });
   
       // Bekræft, at kommentaren vises under rapporten
       cy.contains('Dette er en test kommentar').should('exist');
-    });
-  
-    it('Opdaterer en kommentar til en rapport', () => {
       // Find den kommentar, vi lige har oprettet
       cy.contains('Dette er en test kommentar')
         .parents('.comment') // Naviger op til kommentarens container
@@ -75,11 +67,8 @@ describe('Brugerflow: Login og rapporthåndtering', () => {
   
       // Bekræft, at kommentarindholdet er opdateret
       cy.contains('Dette er en opdateret kommentar').should('exist');
-    });
-  
-    it('Opdaterer rapporttypen', () => {
-        // Åbn redigeringsmodalen for rapporten
-        cy.contains('Dette er en opdateret rapport')
+
+      cy.contains('Dette er en opdateret rapport')
           .parents('li')
           .within(() => {
             // Klik på 'Rediger' knappen for rapporten (brug en mere specifik selector)
@@ -104,6 +93,7 @@ describe('Brugerflow: Login og rapporthåndtering', () => {
           .within(() => {
             cy.contains('UBD').should('exist');
           });
-      });      
+    });
+    
   });
   
