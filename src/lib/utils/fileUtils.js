@@ -1,9 +1,10 @@
 export async function handleFileChange(event, addFiles) {
+  // Hent filerne fra eventet og kald addFiles for at tilføje dem til store-objektet
     const files = event.target.files;
     if (files.length > 0) {
-      await addFiles(files);
+      await addFiles(files); 
     }
-    event.target.value = '';
+    event.target.value = ''; // Nulstil input-feltet for at sikre, at samme fil kan tilføjes flere gange
   }
   
   export async function handlePaste(event, addFiles) {
@@ -41,7 +42,7 @@ export async function handleFileChange(event, addFiles) {
       const filePromise = new Promise((resolve, reject) => {
         const reader = new FileReader();
         reader.onload = function (e) {
-          const base64Data = e.target.result.split(',')[1];
+          const base64Data = e.target.result.split(',')[1]; // fjerner meta data fra base64 string
           resolve(base64Data);
         };
         reader.onerror = function () {
@@ -54,6 +55,7 @@ export async function handleFileChange(event, addFiles) {
     }
   
     try {
+      // Vent på, at alle filer er blevet læst som Base64
       const newImages = await Promise.all(filePromises);
       store.update((currentImages) => {
         if (reportId !== null) {
@@ -61,12 +63,13 @@ export async function handleFileChange(event, addFiles) {
           return {
             ...currentImages,
             [reportId]: [
-              ...(currentImages[reportId] || []),
+              ...(currentImages[reportId] || []), // bevare eksisterende billeder for rapporten
               ...newImages,
             ],
           };
         } else {
-          // For general images, update the images array
+          // For general images, update the images array bruger vi ikke til noget endnu, men kan være nyttig senere
+          // fx hvis vi skal tilføje billeder til en brugerprofil fordi de ikke har en rapportId
           return [...currentImages, ...newImages];
         }
       });
@@ -77,17 +80,19 @@ export async function handleFileChange(event, addFiles) {
   }
   
   export function removeImage(index, store, reportId = null) {
+    // opdatere store-objektet med den ændrede liste af billeder
     store.update((currentImages) => {
       if (reportId !== null) {
-        const imagesForReport = currentImages[reportId] || [];
-        imagesForReport.splice(index, 1);
+        const imagesForReport = currentImages[reportId] || []; // henter billeder fra den specifikke rapport
+        imagesForReport.splice(index, 1); // fjerner billedet på det angivene index i arrayet
         return {
-          ...currentImages,
-          [reportId]: imagesForReport,
+          ...currentImages, // bevar de øvrige billeder for andre rapporter
+          [reportId]: imagesForReport, // opdater billederne for denne rapport
         };
       } else {
-        currentImages.splice(index, 1);
-        return [...currentImages];
+        // håndtering for generelle billeder
+        currentImages.splice(index, 1); // fjerner billedet på det angivene index i arrayet
+        return [...currentImages]; // returnerer en ny kopi af arrayet
       }
     });
   }
