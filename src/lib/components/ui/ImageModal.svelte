@@ -1,7 +1,7 @@
 <script>
 	export let show = false;
 	export let imageSrc = '';
-	export let onClose = () => {};
+	export let onClose = () => {}; // callback function for closing the modal
 </script>
 
 {#if show}
