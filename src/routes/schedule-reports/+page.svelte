@@ -527,12 +527,6 @@
 										<button
 											class="p-0 border-none bg-transparent cursor-pointer"
 											on:click={() => openImageModal(`data:image/*;base64,${image.image_data}`)}
-											on:keydown={(event) => {
-												if (event.key === 'Enter' || event.key === ' ') {
-													openImageModal(`data:image/*;base64,${image.image_data}`);
-													event.preventDefault();
-												}
-											}}
 											aria-label="Vis billede i fuld størrelse"
 										>
 											<img
@@ -570,14 +564,7 @@
 												{#each comment.images as image}
 													<button
 														class="p-0 border-none bg-transparent cursor-pointer"
-														on:click={() =>
-															openImageModal(`data:image/*;base64,${image.image_data}`)}
-														on:keydown={(event) => {
-															if (event.key === 'Enter' || event.key === ' ') {
-																openImageModal(`data:image/*;base64,${image.image_data}`);
-																event.preventDefault();
-															}
-														}}
+														on:click={() => openImageModal(`data:image/*;base64,${image.image_data}`)}
 														aria-label="Vis billede i fuld størrelse"
 													>
 														<img

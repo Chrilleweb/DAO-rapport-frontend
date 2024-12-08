@@ -156,20 +156,18 @@
 	}
 	// For comment images
 	function handleCommentFileChange(event, reportId) {
-    handleFileChange(event, (files) =>
-        addFiles(files, newCommentImages, setErrorMessage, reportId)
-    );
-}
+		handleFileChange(event, (files) =>
+			addFiles(files, newCommentImages, setErrorMessage, reportId)
+		);
+	}
 
-function handleCommentPaste(event, reportId) {
-    handlePaste(event, (files) =>
-        addFiles(files, newCommentImages, setErrorMessage, reportId)
-    );
-}
+	function handleCommentPaste(event, reportId) {
+		handlePaste(event, (files) => addFiles(files, newCommentImages, setErrorMessage, reportId));
+	}
 
-function removeCommentImage(index, reportId) {
-    removeImage(index, newCommentImages, reportId);
-}
+	function removeCommentImage(index, reportId) {
+		removeImage(index, newCommentImages, reportId);
+	}
 
 	function handleDelete() {
 		if (editingType === 'report') {
@@ -462,12 +460,6 @@ function removeCommentImage(index, reportId) {
 										<button
 											class="p-0 border-none bg-transparent cursor-pointer"
 											on:click={() => openImageModal(`data:image/*;base64,${image.image_data}`)}
-											on:keydown={(event) => {
-												if (event.key === 'Enter' || event.key === ' ') {
-													openImageModal(`data:image/*;base64,${image.image_data}`);
-													event.preventDefault();
-												}
-											}}
 											aria-label="Vis billede i fuld størrelse"
 										>
 											<img
@@ -505,14 +497,7 @@ function removeCommentImage(index, reportId) {
 												{#each comment.images as image}
 													<button
 														class="p-0 border-none bg-transparent cursor-pointer"
-														on:click={() =>
-															openImageModal(`data:image/*;base64,${image.image_data}`)}
-														on:keydown={(event) => {
-															if (event.key === 'Enter' || event.key === ' ') {
-																openImageModal(`data:image/*;base64,${image.image_data}`);
-																event.preventDefault();
-															}
-														}}
+														on:click={() => openImageModal(`data:image/*;base64,${image.image_data}`)}
 														aria-label="Vis billede i fuld størrelse"
 													>
 														<img
