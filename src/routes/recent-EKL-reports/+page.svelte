@@ -6,7 +6,7 @@
 </script>
 
 <svelte:head>
-	<title>Indhentnings Rapport</title>
+	<title>EKL Rapport</title>
 	<meta name="description" content="EKL rapport side">
 </svelte:head>
 

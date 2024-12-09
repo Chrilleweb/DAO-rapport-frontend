@@ -505,6 +505,11 @@
 	}
 </script>
 
+<svelte:head>
+	<title>Tidligere Rapporter</title>
+	<meta name="description" content="Tidligere rapporter side">
+</svelte:head>
+
 <div class="max-w-3xl mx-auto mt-6 mb-10">
 	{#if isLoading}
 		<Loader />

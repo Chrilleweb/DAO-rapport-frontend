@@ -396,6 +396,11 @@
 	}
 </script>
 
+<svelte:head>
+	<title>Planlagt Rapport</title>
+	<meta name="description" content="Planlagt rapport side">
+</svelte:head>
+
 <div class="max-w-3xl mx-auto">
 	<!-- Success Modal -->
 	<SuccessModal message={successMessage} show={showSuccessModal} />
