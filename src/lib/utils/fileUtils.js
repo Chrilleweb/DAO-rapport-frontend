@@ -68,8 +68,6 @@ export async function handleFileChange(event, addFiles) {
             ],
           };
         } else {
-          // For general images, update the images array bruger vi ikke til noget endnu, men kan være nyttig senere
-          // fx hvis vi skal tilføje billeder til en brugerprofil fordi de ikke har en rapportId
           return [...currentImages, ...newImages];
         }
       });
