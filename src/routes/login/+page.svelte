@@ -44,7 +44,7 @@
 			</div>
 
 			<div>
-				<label for="password" class="block text-sm font-medium text-gray-700">Password</label>
+				<label for="password" class="block text-sm font-medium text-gray-700">Adgangskode</label>
 				<input
 					id="password"
 					type="password"

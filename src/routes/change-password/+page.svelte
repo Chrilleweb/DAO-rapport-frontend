@@ -10,13 +10,13 @@
         message = '';
 
         if (newPassword !== confirmPassword) {
-            message = "Passwords do not match";
+            message = "Adgangskoderne er ikke ens";
             return;
         }
 
         try {
             await changePassword({ newPassword, confirmPassword });
-            message = "Password changed successfully!";
+            message = "Adganskode er blevet ændret";
             await goto('/'); 
         } catch (err) {
             message = err.message || 'Der opstod en fejl';
@@ -26,11 +26,11 @@
 
 <div class="flex items-center justify-center min-h-screen">
     <div class="w-full max-w-md bg-white p-8 shadow-lg rounded-lg">
-        <h2 class="text-3xl font-bold text-center text-HeaderBg mb-6">Change Password</h2>
+        <h2 class="text-3xl font-bold text-center text-HeaderBg mb-6">Skift adgangskode</h2>
 
         <div class="h-6">
             {#if message}
-                <p class="text-center mb-4 {message === 'Password changed successfully!'
+                <p class="text-center mb-4 {message === 'Adganskode er blevet ændret'
                 ? 'text-green-500' 
                 : 'text-red-500'}">{message}</p>
             {/if}
@@ -38,7 +38,7 @@
 
         <form on:submit|preventDefault={handleChangePassword} class="space-y-4">
             <div>
-                <label for="new-password" class="block text-sm font-medium text-gray-700">New Password</label>
+                <label for="new-password" class="block text-sm font-medium text-gray-700">Ny adgangskode</label>
                 <input
                     id="new-password"
                     type="password"
@@ -50,7 +50,7 @@
             </div>
 
             <div>
-                <label for="confirm-password" class="block text-sm font-medium text-gray-700">Confirm Password</label>
+                <label for="confirm-password" class="block text-sm font-medium text-gray-700">Bekræft ny adgangskode</label>
                 <input
                     id="confirm-password"
                     type="password"
