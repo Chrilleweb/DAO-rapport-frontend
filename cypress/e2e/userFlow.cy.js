@@ -1,5 +1,6 @@
 describe('Brugerflow: Login og rapporthåndtering', () => {
     beforeEach(() => {
+      cy.viewport('macbook-15') // Set viewport to 375px x 667px
       // Inden hver test: Log ind
       cy.login('test@mail.com', 'testpassword!');
     });
