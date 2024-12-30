@@ -178,7 +178,7 @@ export function generateStandardPDF(reports, reportType) {
 	});
 
 	// Gem PDF
-	doc.save('rapporter_med_kommentarer.pdf');
+	doc.save(`${title}.pdf`);
 }
 
 export function generateAIPDF(processedData, reportType) {
@@ -246,5 +246,5 @@ export function generateAIPDF(processedData, reportType) {
 	});
 
 	// Gem PDF
-	doc.save('rapporter_ai.pdf');
+	doc.save(`${title}.pdf`);
 }
